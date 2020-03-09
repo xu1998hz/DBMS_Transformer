@@ -47,6 +47,7 @@ class Table:
         self.num_records = 0
         self.merge_pid = None
         self.merged_record = {}
+        self.lock_manager = {}
         # background merge thread is running as table started
 
 
@@ -115,6 +116,28 @@ class Table:
             # TPS updates
             BufferPool.set_tps(self.name, col_index, rg_index, new_tps)
             self.merged_record = {}
+
+    def lock_init(self, address):
+        # initialize lock manager table during insertions
+        self.lock_manager[address] = {}
+        self.lock_manager[address]['read_lock'] = 0
+        self.lock_manager[address]['write_lock'] = 0
+
+    def acquire_read_lock(self, address):
+        if self.lock_manager[address]['write_lock'] < 1:
+            self.lock_manager[address]['read_lock'] += 1
+            return True
+        else:
+            return False
+
+    def acquire_write_lock(self, address):
+        self.lock_manager[address]['write_lock'] += 1
+
+    def release_read_lock(self, address):
+        self.lock_manager[address]['read_lock'] -= 1
+
+    def release_write_lock(self, address):
+        self.lock_manager[address]['write_lock'] -= 1
 
     def mg_rec_update(self, col_index, rg_index, pg_index, rc_index):
         self.merged_record[(self.name, "Base", col_index, rg_index, pg_index, rc_index)] = 0

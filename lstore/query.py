@@ -22,7 +22,7 @@ def datetime_to_int(dt):
 
 class Query:
     """
-    # Creates a Query object that can perform different queries on the specified table 
+    # Creates a Query object that can perform different queries on the specified table
     Queries that fail must return False
     Queries that succeed should return the result or True
     Any query that crashes (due to exceptions) should return False
@@ -65,12 +65,13 @@ class Query:
         for i in range(self.table.num_columns):
             if self.table.index.indices[i] != None:
                 self.table.index.update_index(columns[i],self.page_pointer,i)
+                self.table.lock_init((i, *self.page_pointer))
 
         # record_page_index,record_index = self.table.get(columns[self.table.key])
         # if (self.page_pointer != [record_page_index,record_index]):
         #     print("error message"+str(self.page_pointer) + str([record_page_index,record_index]))
         self.table.num_records += 1
-    
+
     """
     # Read a record with specified key
     # :param key: the key value to select records based on
@@ -100,9 +101,17 @@ class Query:
                     continue
                 if (base_schema & (1<<query_col))>>query_col == 1:
                     res.append(self.table.get_tail(int.from_bytes(base_indirection,byteorder = 'big'),query_col, page_pointer[i][0]))
+                    if self.table.acquire_read_lock((query_col, *page_pointer[i][0])):
+                        return True
+                    else:
+                        return False
                 else:
                     args = [self.table.name, "Base", query_col + NUM_METAS, *page_pointer[i]]
                     res.append(int.from_bytes(BufferPool.get_record(*args), byteorder="big"))
+                    if self.table.acquire_read_lock((query_col + NUM_METAS, *page_pointer[i])):
+                        return True
+                    else:
+                        return False
 
             # construct the record with rid, primary key, columns
             args = [self.table.name, "Base", RID_COLUMN, *page_pointer[i]]
@@ -192,8 +201,8 @@ class Query:
         self.table.mergeThreadController()
 
     """
-    :param start_range: int         # Start of the key range to aggregate 
-    :param end_range: int           # End of the key range to aggregate 
+    :param start_range: int         # Start of the key range to aggregate
+    :param end_range: int           # End of the key range to aggregate
     :param aggregate_columns: int  # Index of desired column to aggregate
     # this function is only called on the primary key.
     # Returns the summation of the given range upon success
