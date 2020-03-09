@@ -131,8 +131,12 @@ class Table:
             return False
 
     def acquire_write_lock(self, address):
-        self.lock_manager[address]['write_lock'] += 1
-
+        if self.lock_manager[address]['write_lock'] < 1 and self.lock_manager[address]['read_lock'] < 1:
+            self.lock_manager[address]['write_lock'] += 1
+            return True
+        else:
+            return False
+            
     def release_read_lock(self, address):
         self.lock_manager[address]['read_lock'] -= 1
 
