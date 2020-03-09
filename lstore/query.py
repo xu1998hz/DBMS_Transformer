@@ -100,18 +100,25 @@ class Query:
                     res.append(None)
                     continue
                 if (base_schema & (1<<query_col))>>query_col == 1:
-                    res.append(self.table.get_tail(int.from_bytes(base_indirection,byteorder = 'big'),query_col, page_pointer[i][0]))
-                    if self.table.acquire_read_lock((query_col, *page_pointer[i][0])):
+                    base_rid = self.table.get_tail(int.from_bytes(base_indirection,byteorder = 'big'),BASE_RID, page_pointer[i][0])
+                    base_range, base_page, base_record = base_rid//(MAX_RECORDS*PAGE_RANGE), base_rid % (MAX_RECORDS*PAGE_RANGE) // MAX_RECORDS, base_rid % (MAX_RECORDS*PAGE_RANGE) % MAX_RECORDS
+                    if self.table.acquire_read_lock((query_col, base_range, base_page, base_record)):
                         return True
                     else:
                         return False
+                    res.append(self.table.get_tail(int.from_bytes(base_indirection,byteorder = 'big'),query_col, page_pointer[i][0]))
+
                 else:
+                    args = [self.table.name, "Base", BASE_RID, *page_pointer[i]]
+                    base_rid = int.from_bytes(BufferPool.get_record(*args), byteorder="big")
+                    base_range, base_page, base_record = base_rid//(MAX_RECORDS*PAGE_RANGE), base_rid % (MAX_RECORDS*PAGE_RANGE) // MAX_RECORDS, base_rid % (MAX_RECORDS*PAGE_RANGE) % MAX_RECORDS
+                    if self.table.acquire_read_lock((query_col, base_range, base_page, base_record)):
+                        return True
+                    else:
+                        return False
                     args = [self.table.name, "Base", query_col + NUM_METAS, *page_pointer[i]]
                     res.append(int.from_bytes(BufferPool.get_record(*args), byteorder="big"))
-                    if self.table.acquire_read_lock((query_col + NUM_METAS, *page_pointer[i])):
-                        return True
-                    else:
-                        return False
+
 
             # construct the record with rid, primary key, columns
             args = [self.table.name, "Base", RID_COLUMN, *page_pointer[i]]
