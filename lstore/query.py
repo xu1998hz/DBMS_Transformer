@@ -63,9 +63,9 @@ class Query:
         self.page_pointer = [range_indice, range_remainder//MAX_RECORDS, range_remainder%MAX_RECORDS]
         # update all existed index
         for i in range(self.table.num_columns):
+            self.table.lock_init((i, *self.page_pointer))
             if self.table.index.indices[i] != None:
                 self.table.index.update_index(columns[i],self.page_pointer,i)
-                self.table.lock_init((i, *self.page_pointer))
 
         # record_page_index,record_index = self.table.get(columns[self.table.key])
         # if (self.page_pointer != [record_page_index,record_index]):
@@ -103,11 +103,13 @@ class Query:
                     base_rid = self.table.get_tail(int.from_bytes(base_indirection,byteorder = 'big'),BASE_RID, page_pointer[i][0])
                     base_range, base_page, base_record = base_rid//(MAX_RECORDS*PAGE_RANGE), base_rid % (MAX_RECORDS*PAGE_RANGE) // MAX_RECORDS, base_rid % (MAX_RECORDS*PAGE_RANGE) % MAX_RECORDS
                     if not self.table.acquire_read_lock((query_col, base_range, base_page, base_record)):
+                        print(query_col, base_range, base_page, base_record)
                         return False
                     res.append(self.table.get_tail(int.from_bytes(base_indirection,byteorder = 'big'),query_col, page_pointer[i][0]))
 
                 else:
                     if not self.table.acquire_read_lock((query_col, *page_pointer[i])):
+                        print(query_col, *page_pointer[i])
                         return False
                     args = [self.table.name, "Base", query_col + NUM_METAS, *page_pointer[i]]
                     res.append(int.from_bytes(BufferPool.get_record(*args), byteorder="big"))
