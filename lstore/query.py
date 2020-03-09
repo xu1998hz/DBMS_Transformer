@@ -102,7 +102,8 @@ class Query:
                     continue
                 # check the read contention
                 if not self.table.acquire_read_lock((query_col, *page_pointer[i])):
-                    return False
+                    pass
+                    #return False
                 if (base_schema & (1<<query_col))>>query_col == 1:
                     res.append(self.table.get_tail(int.from_bytes(base_indirection,byteorder = 'big'),query_col, page_pointer[i][0]))
 
@@ -144,7 +145,8 @@ class Query:
             else:
                 # check the write contention
                 if not self.table.acquire_write_lock((query_col,  *page_pointer[0])):
-                    return False
+                    pass
+                    #return False
                 # self.table.page_directory["Base"][NUM_METAS+query_col][update_range_index].Hash_insert(int.from_bytes(base_rid,byteorder='big'))
                 # compute new tail record TID
                 self.table.mg_rec_update(NUM_METAS+query_col, *page_pointer[0])
@@ -218,7 +220,8 @@ class Query:
             page_pointer = locations[i]
             # check the read contention
             if not self.table.acquire_read_lock((aggregate_column_index, *page_pointer[0])):
-                return False
+                pass
+                #return False
             # collect base meta datas of this record
             args = [self.table.name, "Base", SCHEMA_ENCODING_COLUMN, *page_pointer[0]]
             base_schema = int.from_bytes(BufferPool.get_record(*args), byteorder='big')
@@ -255,7 +258,8 @@ class Query:
         for i in range(self.table.num_columns):
             # check the write contention
             if not self.table.acquire_write_lock((i,  *page_pointer[0])):
-                return False
+                pass
+                #return False
             null_value.append(DELETED)
             self.table.mg_rec_update(NUM_METAS+i, *page_pointer[0])
 
