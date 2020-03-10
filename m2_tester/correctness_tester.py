@@ -91,7 +91,7 @@ for c in range(0, grades_table.num_columns):
         r = [r0[0], r0[0] + batch_size]
         column_sum = sum(map(lambda key: records[key][c], keys[r[0]: r[1] + 1]))
         result = query.sum(keys[r[0]], keys[r[1]], c)
-        if column_sum != result:
+        if column_sum != result
             print('sum error on [', keys[r[0]], ',', keys[r[1]], ']: ', result, ', correct: ', column_sum)
             exit()
         # else:

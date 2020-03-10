@@ -22,6 +22,7 @@ records = {}
 num_threads = 8
 seed(8739878934)
 
+grades_table.num_threads = num_threads
 # Generate random records
 for i in range(0, 10000):
     key = 92106429 + i

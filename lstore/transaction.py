@@ -24,8 +24,7 @@ class Transaction:
     def run(self):
         for query, args in self.queries:
             result = query(*args)
-            # If the query has failed the transaction should abort
-            if result == False:
+            # If the query has failed the transaction should abort\            if result == False:
                 return self.abort()
         return self.commit()
 
@@ -36,4 +35,3 @@ class Transaction:
     def commit(self):
         # TODO: commit to database
         return True
-
