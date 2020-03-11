@@ -40,7 +40,7 @@ class Transaction:
         args = [query.table.name, "Base", SCHEMA_ENCODING_COLUMN, *page_pointer]
         base_schema = int.from_bytes(BufferPool.get_record(*args), byteorder='big')
         args = [query.table.name, "Base", INDIRECTION_COLUMN, *page_pointer]
-        base_indirection = BufferPool.get_record(*args)
+        base_indirection = BufferPool.get_record(*args
         if(base_schema & (1<<query_col)) >> query_col == 1:
             return(self.query.table.get_tail(int.from_bytes(base_indirection,byteorder = 'big'),query_col, page_pointer[i][0]))
         else:
