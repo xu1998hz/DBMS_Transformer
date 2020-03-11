@@ -1,5 +1,7 @@
 from lstore.table import Table, Record
+from lstore.buffer_pool import BufferPool
 from lstore.index import Index
+from lstore.config import *
 
 class Transaction:
 
