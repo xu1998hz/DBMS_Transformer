@@ -47,4 +47,4 @@ class Transaction:
             args = [self.table.name, "Base", query_col + NUM_METAS, *page_pointer]
             return int.frome_bytes(BufferPool.get_records(*args), byteorder = "big"))
          #Total record specified by key and columns
-    def write(self):
+    def write_column(self):

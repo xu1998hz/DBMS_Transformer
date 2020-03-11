@@ -32,6 +32,7 @@ class Query:
         self.select_count = 0
         self.update_count = 0
         self.delete_count = 0
+        self.sum_count = 0
         self.table = table
         #self.table.index = Index(self.table)
         # pointer contains page range, page number, indices within page
@@ -122,11 +123,11 @@ class Query:
         #    prim_key = BufferPool.get_record(*args)
         #    record = Record(rid, prim_key, res)
         #    records.append(record)
-        trans['query_columns'] = query_columns
+
         trans['command_type'] = "select"
         trans['command_num'] = self.select_count
         trans['read_indexes'] = page_pointer
-
+        trans['query_columns'] = query_columns
     return trans
         #return records
 
@@ -136,17 +137,23 @@ class Query:
     # Returns False if no records exist with given key or if the target record cannot be accessed due to 2PL locking
     """
     def update(self, key, *columns):
+        self.update_count += 1
         # get the indirection in base pages given specified key\
         page_pointer = self.table.index.locate(self.table.key,key)
         update_range_index, update_record_page_index,update_record_index = page_pointer[0][0],page_pointer[0][1], page_pointer[0][2]
         # if primary key in index is also updated, then insert new entries into primary key index
         if (columns[self.table.key] != None ):
              self.table.index.update_index(columns[self.table.key],page_pointer[0],self.table.key)
+
+        #needs read
         args = [self.table.name, "Base", INDIRECTION_COLUMN, *page_pointer[0]]
         base_indirection_id = BufferPool.get_record(*args)
         args = [self.table.name, "Base", RID_COLUMN, *page_pointer[0]]
         base_rid = BufferPool.get_record(*args)
         base_id = int.from_bytes(base_rid, byteorder='big')
+
+
+        #needs write
 
         for query_col,val in enumerate(columns):
             if val == None:
@@ -218,29 +225,38 @@ class Query:
 
     def sum(self, start_range, end_range, aggregate_column_index):
         values = 0
+        self.sum_count += 1
         # locate all keys in index
         locations = self.table.index.locate_range(start_range, end_range, self.table.key)
-        # Aggregating columns specified
-        for i in range(len(locations)):
-            page_pointer = locations[i]
-            # collect base meta datas of this record
-            args = [self.table.name, "Base", SCHEMA_ENCODING_COLUMN, *page_pointer[0]]
-            base_schema = int.from_bytes(BufferPool.get_record(*args), byteorder='big')
-            args = [self.table.name, "Base", INDIRECTION_COLUMN, *page_pointer[0]]
-            base_indirection = BufferPool.get_record(*args)
 
-            if (base_schema & (1<<aggregate_column_index))>>aggregate_column_index == 1:
-                temp = self.table.get_tail(int.from_bytes(base_indirection, byteorder = 'big'),aggregate_column_index, locations[i][0][0])
-                if (temp == DELETED): # might be deleted
-                    continue
-                values  += temp
-            else:
-                args = [self.table.name, "Base", aggregate_column_index + NUM_METAS, *page_pointer[0]]
-                temp = int.from_bytes(BufferPool.get_record(*args), byteorder="big")
-                if (temp == DELETED): # might be deleted
-                    continue
-                values += temp
-        return values
+        trans['command_type'] = "sum"
+        trans['command_num'] = self.sum_count
+        trans['read_indexes'] = locations
+        trans['query_columns'] = [aggregate_column_index]
+
+        return trans
+        # Aggregating columns specified
+
+        # for i in range(len(locations)):
+        #     page_pointer = locations[i]
+        #     # collect base meta datas of this record
+        #     args = [self.table.name, "Base", SCHEMA_ENCODING_COLUMN, *page_pointer[0]]
+        #     base_schema = int.from_bytes(BufferPool.get_record(*args), byteorder='big')
+        #     args = [self.table.name, "Base", INDIRECTION_COLUMN, *page_pointer[0]]
+        #     base_indirection = BufferPool.get_record(*args)
+        #
+        #     if (base_schema & (1<<aggregate_column_index))>>aggregate_column_index == 1:
+        #         temp = self.table.get_tail(int.from_bytes(base_indirection, byteorder = 'big'),aggregate_column_index, locations[i][0][0])
+        #         if (temp == DELETED): # might be deleted
+        #             continue
+        #         values  += temp
+        #     else:
+        #         args = [self.table.name, "Base", aggregate_column_index + NUM_METAS, *page_pointer[0]]
+        #         temp = int.from_bytes(BufferPool.get_record(*args), byteorder="big")
+        #         if (temp == DELETED): # might be deleted
+        #             continue
+        #         values += temp
+        # return values
 
     """
     # internal Method
