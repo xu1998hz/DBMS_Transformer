@@ -33,6 +33,13 @@ class TransactionWorker:
     # t.add_query(q.update, 0, *[None, 1, None, 2, None])
     # transaction_worker = TransactionWorker([t])
     """
+    # current thread is getting ready to execute operations inside one transaction
+    # def execution_stage(self):
+
+    def query_select(self, query, page_pointers):
+        for page_pointer in page_pointers:
+            self.read_base_column(query, page_pointer, )
+
     def run(self):
         for transaction in self.transactions:
             # each transaction returns True if committed or False if aborted
