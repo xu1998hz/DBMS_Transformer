@@ -190,7 +190,7 @@ class Query:
                 # self.table.page_directory["Base"][NUM_METAS+query_col][update_range_index].Hash_insert(int.from_bytes(base_rid,byteorder='big'))
                 # compute new tail record TID, it requires to latch the page, lacth the page means read this page
 
-                self.table.mg_rec_update(NUM_METAS+query_col, *page_pointer[0])
+                # self.table.mg_rec_update(NUM_METAS+query_col, *page_pointer[0])
                 tmp_indice = self.table.get_latest_tail(INDIRECTION_COLUMN, update_range_index)
 
                 #args = [self.table.name, "Tail", INDIRECTION_COLUMN, update_range_index, tmp_indice]
@@ -235,28 +235,38 @@ class Query:
                 #     next_tail_columns = self.table.get_tail_columns(base_indirection, update_range_index)
                 #     next_tail_columns[query_col] = val
 
-                args = [self.table.name, "Base", SCHEMA_ENCODING_COLUMN, *page_pointer[0]]
-                encoding_base = BufferPool.get_record(*args)
-                old_encoding = int.from_bytes(encoding_base,byteorder="big")
-                new_encoding = old_encoding | (1<<query_col)
-                schema_encoding = new_encoding
-                starttime = datetime_to_int(datetime.datetime.now())
-                lastupdatetime = 0
-                updatetime = 0
+                ops_temp['query_read_columns'] = SCHEMA_ENCODING_COLUMN
+                ops_temp['r_w'] = 'read'
+                ops_temp['base_tail'] = "Base"
+                ops_temp['meta-data'] = "Meta"
+                ops_temp['rec_location'] = page_pointer[0][2]
+                ops_temp['page_lacth'] = 0
+                ops_list.append([tuple(page_pointer[0][0], page_pointer[0][1]), ops_temp])
+
+                #args = [self.table.name, "Base", SCHEMA_ENCODING_COLUMN, *page_pointer[0]]
+                #encoding_base = BufferPool.get_record(*args)
+                #old_encoding = int.from_bytes(encoding_base,byteorder="big")
+                #new_encoding = old_encoding | (1<<query_col)
+                #schema_encoding = new_encoding
+                #starttime = datetime_to_int(datetime.datetime.now())
+                #lastupdatetime = 0
+                #updatetime = 0
                 # update new tail record
-                meta_data = [next_tail_indirection,next_tid,schema_encoding,base_id,starttime,lastupdatetime,updatetime]
-                meta_data.extend(next_tail_columns)
-                tail_data = meta_data
-                self.table.tail_page_write(tail_data, update_range_index)
+                # meta_data = [next_tail_indirection,next_tid,schema_encoding,base_id,starttime,lastupdatetime,updatetime]
+                # meta_data.extend(next_tail_columns)
+                # tail_data = meta_data
+                # self.table.tail_page_write(tail_data, update_range_index)
+
+                # page is already latched
 
                 # overwrite base page with new metadata
-                args = [self.table.name, "Base", INDIRECTION_COLUMN, page_pointer[0][0], page_pointer[0][1]]
-                page = BufferPool.get_page(*args)
-                page.update(update_record_index, next_tid)
-
-                args = [self.table.name, "Base", SCHEMA_ENCODING_COLUMN, page_pointer[0][0], page_pointer[0][1]]
-                page = BufferPool.get_page(*args)
-                page.update(update_record_index, schema_encoding)
+                # args = [self.table.name, "Base", INDIRECTION_COLUMN, page_pointer[0][0], page_pointer[0][1]]
+                # page = BufferPool.get_page(*args)
+                # page.update(update_record_index, next_tid)
+                #
+                # args = [self.table.name, "Base", SCHEMA_ENCODING_COLUMN, page_pointer[0][0], page_pointer[0][1]]
+                # page = BufferPool.get_page(*args)
+                # page.update(update_record_index, schema_encoding)
 
                 self.table.num_updates += 1
         #self.table.event.set()
