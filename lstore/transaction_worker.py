@@ -79,3 +79,5 @@ class TransactionWorker:
         args = [self.table.name, "Base", SCHEMA_ENCODING_COLUMN, page_pointer[0][0], page_pointer[0][1]]
         page = BufferPool.get_page(*args)
         page.update(update_record_index, schema_encoding)
+
+        self.table.num_updates += 1
