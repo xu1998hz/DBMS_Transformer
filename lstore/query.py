@@ -277,6 +277,7 @@ class Query:
 
                 # self.table.num_updates += 1
         #self.table.event.set()
+        return ops_list
         self.table.mergeThreadController()
 
     """
@@ -294,12 +295,40 @@ class Query:
         # locate all keys in index
         locations = self.table.index.locate_range(start_range, end_range, self.table.key)
 
-        trans['command_type'] = "sum"
-        trans['command_num'] = self.sum_count
-        trans['read_indexes'] = locations
-        trans['query_columns'] = [aggregate_column_index]
+        ops_list = []
+        ops_temp = {}
 
-        return trans
+        ops_temp['command_type'] = "sum"
+        ops_temp['command_num'] = self.sum_count
+
+        for i in range(len(locations)):
+            page_pointer = locations[i]
+
+            ops_temp['query_columns'] = SCHEMA_ENCODING_COLUMN
+            ops_temp['r_w'] = 'read'
+            ops_temp['base_tail'] = "Base"
+            ops_temp['meta-data'] = "Meta"
+            ops_temp['rec_location'] = page_pointer[0][2]
+            ops_temp['page_lacth'] = 0
+            ops_list.append([tuple(page_pointer[0][0], page_pointer[0][1]), ops_temp])
+
+            ops_temp['query_columns'] = INDIRECTION_COLUMN
+            ops_temp['r_w'] = 'read'
+            ops_temp['base_tail'] = "Base"
+            ops_temp['meta-data'] = "Meta"
+            ops_temp['rec_location'] = page_pointer[0][2]
+            ops_temp['page_lacth'] = 0
+            ops_list.append([tuple(page_pointer[0][0], page_pointer[0][1]), ops_temp])
+
+            ops_temp['query_columns'] = aggregate_column_index
+            ops_temp['r_w'] = 'read'
+            ops_temp['base_tail'] = "Base"
+            ops_temp['meta-data'] = "data"
+            ops_temp['rec_location'] = page_pointer[0][2]
+            ops_temp['page_lacth'] = 0
+            ops_list.append([tuple(page_pointer[0][0], page_pointer[0][1]), ops_temp])
+
+        return ops_list
         # Aggregating columns specified
 
         # for i in range(len(locations)):
@@ -446,7 +475,7 @@ class Query:
 
         # self.table.num_updates += 1
         # self.table.mergeThreadController()
-
+        return ops_list
     #    self.table.invalidate_record(page_range, page_index, record_index)
 
     """

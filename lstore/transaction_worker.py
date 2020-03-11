@@ -48,20 +48,21 @@ class TransactionWorker:
         self.result = len(list(filter(lambda x: x, self.stats)))
 
     # read data column from page pointer for specific query column, return specific value of record
-    def read_data_column(self, query, page_pointer, query_col, base_tail, meta_data):
-        if meta_data == "Meta":
-            args = [query.table.name, base_tail, query_col, *page_pointer]
-            return int.from_bytes(BufferPool.get_records(*args), byteorder = "big"))
+    def read_data_column(self, query, page_pointer, query_col):
+        args = [query.table.name, base_tail, SCHEMA_ENCODING_COLUMN, *page_pointer]
+        base_schema = int.from_bytes(BufferPool.get_record(*args), byteorder='big')
+        args = [query.table.name, base_tail, INDIRECTION_COLUMN, *page_pointer]
+        base_indirection = BufferPool.get_record(*args)
+        if (base_schema & (1<<query_col)) >> query_col == 1:
+            return(self.query.table.get_tail(int.from_bytes(base_indirection,byteorder = 'big'),query_col, page_pointer[0]))
         else:
-            args = [query.table.name, base_tail, SCHEMA_ENCODING_COLUMN, *page_pointer]
-            base_schema = int.from_bytes(BufferPool.get_record(*args), byteorder='big')
-            args = [query.table.name, base_tail, INDIRECTION_COLUMN, *page_pointer]
-            base_indirection = BufferPool.get_record(*args)
-            if (base_schema & (1<<query_col)) >> query_col == 1:
-                return(self.query.table.get_tail(int.from_bytes(base_indirection,byteorder = 'big'),query_col, page_pointer[0]))
-            else:
-                args = [query.table.name, base_tail, query_col + NUM_METAS, *page_pointer]
-                return int.from_bytes(BufferPool.get_records(*args), byteorder = "big"))
+            args = [query.table.name, 'Tail', query_col + NUM_METAS, *page_pointer]
+            return int.from_bytes(BufferPool.get_records(*args), byteorder = "big"))
+
+    # read meta data columns 
+    def read_meta_column(self, query, page_pointer, query_col, base_tail):
+        args = [query.table.name, base_tail, query_col, *page_pointer]
+        return int.from_bytes(BufferPool.get_records(*args), byteorder = "big"))
 
     # write to one tail record to the tail page
     def write_rec(self, query, page_pointer, base_tail, meta_data, data_cols):
