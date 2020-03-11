@@ -124,6 +124,7 @@ class Query:
         trans['command_type'] = "select"
         trans['command_num'] = self.select_count
         trans['read_indexes'] = page_pointer
+    return trans
         #return records
 
     """
