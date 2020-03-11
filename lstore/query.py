@@ -143,7 +143,7 @@ class Query:
         #    prim_key = BufferPool.get_record(*args)
         #    record = Record(rid, prim_key, res)
         #    records.append(record)
-    return ops_list
+        return ops_list
         #return records
 
     """
