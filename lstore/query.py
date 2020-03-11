@@ -11,6 +11,7 @@ import datetime
 from functools import reduce
 from operator import add
 import threading
+from queue import Queue
 # TODO: Change RID to all integer and set offset bit
 # TODO : implement all queries by indexing
 # TODO : implement page range
@@ -65,6 +66,11 @@ class Query:
         range_indice = self.table.num_records // (MAX_RECORDS * PAGE_RANGE)
         range_remainder = self.table.num_records % (MAX_RECORDS * PAGE_RANGE)
         self.page_pointer = [range_indice, range_remainder//MAX_RECORDS, range_remainder%MAX_RECORDS]
+
+        # initialize the queues inside priority_queues
+        for queue in self.table.priority_queues:
+            queue[tuple(self.page_pointer)] = Queue()
+
         # update all existed index
         for i in range(self.table.num_columns):
             if self.table.index.indices[i] != None:
@@ -84,13 +90,22 @@ class Query:
     # Assume that select will never be called on a key that doesn't exist
     """
 
+    """
+    # Based on indexes, breakdown select into read operations to every index records
+    # return value will be a list of record dictionaries
+    """
     def select(self, key, column, query_columns):
         self.select_count += 1
         # Get the indirection id given choice of key in specific column
-        page_pointer = self.table.index.locate(column, key)
+        page_pointers = self.table.index.locate(column, key)
         #records = []
-        trans = {}
-
+        ops_list = []
+        ops = {}
+        for page_pointer in page_pointers:
+            ops['command_type'] = "select"
+            ops['command_num'] = self.select_count
+            ops['query_columns'] = query_columns
+            ops_list.append([page_pointer, ops])
         #read_indexes = []
         #for i in range(len(page_pointer)):
             # collect base meta datas of each record
@@ -123,12 +138,7 @@ class Query:
         #    prim_key = BufferPool.get_record(*args)
         #    record = Record(rid, prim_key, res)
         #    records.append(record)
-
-        trans['command_type'] = "select"
-        trans['command_num'] = self.select_count
-        trans['read_indexes'] = page_pointer
-        trans['query_columns'] = query_columns
-    return trans
+    return ops_list
         #return records
 
     """
@@ -267,6 +277,7 @@ class Query:
 
     # TODO : merging -> remove all invalidate record and key in index
     def delete(self, key):
+        self.delete_count += 1
         #page_pointer = self.table.index.locate(self.table.key,key)
         null_value = []
 

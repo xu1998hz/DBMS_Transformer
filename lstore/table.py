@@ -47,7 +47,6 @@ class Table:
         self.num_records = 0
         self.merge_pid = None
         self.merged_record = {}
-        self.num_threads = 0
         # initialize the priority queues based on working threads
         self.priority_queues = []
 
@@ -117,9 +116,9 @@ class Table:
             BufferPool.set_tps(self.name, col_index, rg_index, new_tps)
             self.merged_record = {}
 
-    def init_priority_queues(self):
-        for i in range(self.num_threads):
-            q = Queue()
+    def init_priority_queues(self, num_threads):
+        for i in range(num_threads):
+            q = {}
             self.priority_queues.append(q)
 
     def mg_rec_update(self, col_index, rg_index, pg_index, rc_index):

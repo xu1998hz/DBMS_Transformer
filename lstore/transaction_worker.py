@@ -2,6 +2,16 @@ from lstore.table import Table, Record
 from lstore.index import Index
 
 class TransactionWorker:
+    """
+    # Adopted algorithm for transaction worker and transactions
+    # From the tester, each transaction worker holds muliple transactions
+    # At the planning stages,
+    # Each transaction holds the plan for its corresponding priority queue
+    # Priority queue location will be passd out by indices of transaction workers
+    # which corresponds to the specific priority queue
+    # At the executon stages,
+    # Each transaction worker will load transactions inside priority queue in order
+    """
 
     """
     # Creates a transaction worker object.
@@ -29,4 +39,3 @@ class TransactionWorker:
             self.stats.append(transaction.run())
         # stores the number of transactions that committed
         self.result = len(list(filter(lambda x: x, self.stats)))
-
