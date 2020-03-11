@@ -84,11 +84,12 @@ class Query:
     """
 
     def select(self, key, column, query_columns):
-        select_count += 1
+        self.select_count += 1
         # Get the indirection id given choice of key in specific column
         page_pointer = self.table.index.locate(column, key)
-        records = []
+        #records = []
         trans = {}
+
         #read_indexes = []
         #for i in range(len(page_pointer)):
             # collect base meta datas of each record
@@ -121,9 +122,11 @@ class Query:
         #    prim_key = BufferPool.get_record(*args)
         #    record = Record(rid, prim_key, res)
         #    records.append(record)
+        trans['query_columns'] = query_columns
         trans['command_type'] = "select"
         trans['command_num'] = self.select_count
         trans['read_indexes'] = page_pointer
+
     return trans
         #return records
 

@@ -36,33 +36,15 @@ class Transaction:
         # TODO: commit to database
         return True
 
-    def read_column(self, pagepointer):
-        for i in range(len(page_pointer)):
-            args = [self.table.name, "Base", SCHEMA_ENCODING_COLUMN, *page_pointer[i]]
-            base_schema = int.from_bytes(BufferPool.get_record(*args), byteorder='big')
-            args = [self.table.name, "Base", INDIRECTION_COLUMN, *page_pointer[i]]
-            base_indirection = BufferPool.get_record(*args)
-
-             #Total record specified by key and columns
-            res = []
-            for query_col, val in enumerate(query_columns):
-                # column is not selected
-                if val != 1:
-                    res.append(None)
-                    continue
-                if (base_schema & (1<<query_col))>>query_col == 1:
-                    res.append(self.table.get_tail(int.from_bytes(base_indirection,byteorder = 'big'),query_col, page_pointer[i][0]))
-                else:
-                    args = [self.table.name, "Base", query_col + NUM_METAS, *page_pointer[i]]
-                    res.append(int.from_bytes(BufferPool.get_record(*args), byteorder="big"))
-
-            # construct the record with rid, primary key, columns
-            args = [self.table.name, "Base", RID_COLUMN, *page_pointer[i]]
-            rid = BufferPool.get_record(*args)
-            args = [self.table.name, "Base", NUM_METAS + column, *page_pointer[i]]
-            # or non_prim _key
-            prim_key = BufferPool.get_record(*args)
-            record = Record(rid, prim_key, res)
-            records.append(record)
-
+    def read_column(self, query, pagepointer, query_col):
+        args = [query.table.name, "Base", SCHEMA_ENCODING_COLUMN, *page_pointer]
+        base_schema = int.from_bytes(BufferPool.get_record(*args), byteorder='big')
+        args = [query.table.name, "Base", INDIRECTION_COLUMN, *page_pointer]
+        base_indirection = BufferPool.get_record(*args)
+        if(base_schema & (1<<query_col)) >> query_col == 1:
+            return(self.query.table.get_tail(int.from_bytes(base_indirection,byteorder = 'big'),query_col, page_pointer[i][0]))
+        else:
+            args = [self.table.name, "Base", query_col + NUM_METAS, *page_pointer]
+            return int.frome_bytes(BufferPool.get_records(*args), byteorder = "big"))
+         #Total record specified by key and columns
     def write(self):
