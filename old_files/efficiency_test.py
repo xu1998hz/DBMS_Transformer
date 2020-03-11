@@ -17,7 +17,7 @@ records = {}
 
 # Measuring Insert Performance
 insert_time_0 = process_time()
-for i in range(0, 1000):
+for i in range(0, 5000):
     key = 92106429 + i
     records[key] = [key, randint(0, 20), randint(0, 20), randint(0, 20), randint(0, 20)]
     query.insert(*records[key])

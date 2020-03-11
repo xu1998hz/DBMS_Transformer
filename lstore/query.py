@@ -22,13 +22,16 @@ def datetime_to_int(dt):
 
 class Query:
     """
-    # Creates a Query object that can perform different queries on the specified table 
+    # Creates a Query object that can perform different queries on the specified table
     Queries that fail must return False
     Queries that succeed should return the result or True
     Any query that crashes (due to exceptions) should return False
     """
 
     def __init__(self, table):
+        self.select_count = 0
+        self.update_count = 0
+        self.delete_count = 0
         self.table = table
         #self.table.index = Index(self.table)
         # pointer contains page range, page number, indices within page
@@ -70,7 +73,7 @@ class Query:
         # if (self.page_pointer != [record_page_index,record_index]):
         #     print("error message"+str(self.page_pointer) + str([record_page_index,record_index]))
         self.table.num_records += 1
-    
+
     """
     # Read a record with specified key
     # :param key: the key value to select records based on
@@ -81,38 +84,47 @@ class Query:
     """
 
     def select(self, key, column, query_columns):
+        select_count += 1
         # Get the indirection id given choice of key in specific column
         page_pointer = self.table.index.locate(column, key)
         records = []
-        for i in range(len(page_pointer)):
+        trans = {}
+        #read_indexes = []
+        #for i in range(len(page_pointer)):
             # collect base meta datas of each record
-            args = [self.table.name, "Base", SCHEMA_ENCODING_COLUMN, *page_pointer[i]]
-            base_schema = int.from_bytes(BufferPool.get_record(*args), byteorder='big')
-            args = [self.table.name, "Base", INDIRECTION_COLUMN, *page_pointer[i]]
-            base_indirection = BufferPool.get_record(*args)
+        #    args = [self.table.name, "Base", SCHEMA_ENCODING_COLUMN, *page_pointer[i]]
+            #read_indexes.append(args)
+
+
+        #    base_schema = int.from_bytes(BufferPool.get_record(*args), byteorder='big')
+        #    args = [self.table.name, "Base", INDIRECTION_COLUMN, *page_pointer[i]]
+        #    base_indirection = BufferPool.get_record(*args)
 
             # Total record specified by key and columns
-            res = []
-            for query_col, val in enumerate(query_columns):
+        #    res = []
+        #    for query_col, val in enumerate(query_columns):
                 # column is not selected
-                if val != 1:
-                    res.append(None)
-                    continue
-                if (base_schema & (1<<query_col))>>query_col == 1:
-                    res.append(self.table.get_tail(int.from_bytes(base_indirection,byteorder = 'big'),query_col, page_pointer[i][0]))
-                else:
-                    args = [self.table.name, "Base", query_col + NUM_METAS, *page_pointer[i]]
-                    res.append(int.from_bytes(BufferPool.get_record(*args), byteorder="big"))
+        #        if val != 1:
+        #            res.append(None)
+        #            continue
+        #        if (base_schema & (1<<query_col))>>query_col == 1:
+        #            res.append(self.table.get_tail(int.from_bytes(base_indirection,byteorder = 'big'),query_col, page_pointer[i][0]))
+        #        else:
+        #            args = [self.table.name, "Base", query_col + NUM_METAS, *page_pointer[i]]
+        #            res.append(int.from_bytes(BufferPool.get_record(*args), byteorder="big"))
 
             # construct the record with rid, primary key, columns
-            args = [self.table.name, "Base", RID_COLUMN, *page_pointer[i]]
-            rid = BufferPool.get_record(*args)
-            args = [self.table.name, "Base", NUM_METAS + column, *page_pointer[i]]
+        #    args = [self.table.name, "Base", RID_COLUMN, *page_pointer[i]]
+        #    rid = BufferPool.get_record(*args)
+        #    args = [self.table.name, "Base", NUM_METAS + column, *page_pointer[i]]
             # or non_prim _key
-            prim_key = BufferPool.get_record(*args)
-            record = Record(rid, prim_key, res)
-            records.append(record)
-        return records
+        #    prim_key = BufferPool.get_record(*args)
+        #    record = Record(rid, prim_key, res)
+        #    records.append(record)
+        trans['command_type'] = "select"
+        trans['command_num'] = self.select_count
+        trans['read_indexes'] = page_pointer
+        #return records
 
     """
     # Update a record with specified key and columns
@@ -192,8 +204,8 @@ class Query:
         self.table.mergeThreadController()
 
     """
-    :param start_range: int         # Start of the key range to aggregate 
-    :param end_range: int           # End of the key range to aggregate 
+    :param start_range: int         # Start of the key range to aggregate
+    :param end_range: int           # End of the key range to aggregate
     :param aggregate_columns: int  # Index of desired column to aggregate
     # this function is only called on the primary key.
     # Returns the summation of the given range upon success
