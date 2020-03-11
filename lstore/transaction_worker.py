@@ -1,5 +1,7 @@
 from lstore.table import Table, Record
 from lstore.index import Index
+from lstore.buffer_pool import BufferPool
+from lstore.config import *
 
 class TransactionWorker:
     """
@@ -57,16 +59,16 @@ class TransactionWorker:
             return(self.query.table.get_tail(int.from_bytes(base_indirection,byteorder = 'big'),query_col, page_pointer[0]))
         else:
             args = [query.table.name, 'Tail', query_col + NUM_METAS, *page_pointer]
-            return int.from_bytes(BufferPool.get_records(*args), byteorder = "big"))
+            return int.from_bytes(BufferPool.get_records(*args), byteorder = "big")
 
     # read meta data columns 
     def read_meta_column(self, query, page_pointer, query_col, base_tail):
         args = [query.table.name, base_tail, query_col, *page_pointer]
-        return int.from_bytes(BufferPool.get_records(*args), byteorder = "big"))
+        return int.from_bytes(BufferPool.get_records(*args), byteorder = "big")
 
     # write to one tail record to the tail page
     def write_rec(self, query, page_pointer, base_tail, meta_data, data_cols):
-        query.table.mg_rec_update(NUM_METAS+query_col, *page_pointer[0])
+        query.table.mg_rec_update(NUM_METAS + query_col, *page_pointer[0])
 
         new_rec = meta_data
         new_rec.extend(data_cols)
