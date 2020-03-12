@@ -8,9 +8,9 @@ class Transaction:
     """
     # Creates a transaction object.
     """
-    def __init__(self, num_queue):
+    def __init__(self, queue_idx):
         self.queries = []
-        self.num_queue = num_queue
+        self.queue_idx = queue_idx
         pass
 
     """
@@ -23,20 +23,10 @@ class Transaction:
     def add_query(self, query, *args):
         self.queries.append((query, args))
 
-    # If you choose to implement this differently this method must still return True if transaction commits or False on abort
-    def run(self):
-        for query, args in self.queries:
-            result = query(*args)
-            # If the query has failed the transaction should abort\
-            if result == False:
-                return self.abort()
-        return self.commit()
-
     # current thread is getting ready to plan operations inside one transaction
     def planning_stage(self):
         for query, args in self.queries:
             r_w_ops_list = query(*args)
             for r_w_ops in r_w_ops_list:
-                if r_w_ops[1]['command_type'] == "select":
-                    # locate the priority queue
-                    query.table.priority_queues[self.num_queue][r_w_ops[0]].put(r_w_ops[1])
+                # locate the priority queue
+                query.table.priority_queues[self.queue_idx][r_w_ops[0]].put(r_w_ops[1])

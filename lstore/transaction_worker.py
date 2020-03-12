@@ -1,5 +1,7 @@
 from lstore.table import Table, Record
 from lstore.index import Index
+from lstore.buffer_pool import BufferPool
+from lstore.config import *
 
 class TransactionWorker:
     """
@@ -16,10 +18,11 @@ class TransactionWorker:
     """
     # Creates a transaction worker object.
     """
-    def __init__(self, transactions = []):
+    def __init__(self, transactions = [], table):
         self.stats = []
         self.transactions = transactions
         self.result = 0
+        self.table = table
         pass
 
     def add_transaction(self, t):
@@ -40,32 +43,43 @@ class TransactionWorker:
         for page_pointer in page_pointers:
             self.read_base_column(query, page_pointer, )
 
-    def run(self):
+    # def run(self):
+    #     for transaction in self.transactions:
+    #         # each transaction returns True if committed or False if aborted
+    #         self.stats.append(transaction.planning_stage())
+    #     # stores the number of transactions that committed
+    #     self.result = len(list(filter(lambda x: x, self.stats)))
+
+    def planning_stage(self):
         for transaction in self.transactions:
-            # each transaction returns True if committed or False if aborted
-            self.stats.append(transaction.run())
-        # stores the number of transactions that committed
-        self.result = len(list(filter(lambda x: x, self.stats)))
+            transaction.planning_stage()
+
+    def execution_stage(self):
+        for priority_queue in self.table.priority_queues:
+            for (page_range_index, page_index), queue in priority_queue:
+                while not queue.empty()
+
 
     # read data column from page pointer for specific query column, return specific value of record
-    def read_data_column(self, query, page_pointer, query_col, base_tail, meta_data):
-        if meta_data == "Meta":
-            args = [query.table.name, base_tail, query_col, *page_pointer]
-            return int.from_bytes(BufferPool.get_records(*args), byteorder = "big"))
+    def read_data_column(self, query, page_pointer, query_col):
+        args = [query.table.name, base_tail, SCHEMA_ENCODING_COLUMN, *page_pointer]
+        base_schema = int.from_bytes(BufferPool.get_record(*args), byteorder='big')
+        args = [query.table.name, base_tail, INDIRECTION_COLUMN, *page_pointer]
+        base_indirection = BufferPool.get_record(*args)
+        if (base_schema & (1<<query_col)) >> query_col == 1:
+            return(self.query.table.get_tail(int.from_bytes(base_indirection,byteorder = 'big'),query_col, page_pointer[0]))
         else:
-            args = [query.table.name, base_tail, SCHEMA_ENCODING_COLUMN, *page_pointer]
-            base_schema = int.from_bytes(BufferPool.get_record(*args), byteorder='big')
-            args = [query.table.name, base_tail, INDIRECTION_COLUMN, *page_pointer]
-            base_indirection = BufferPool.get_record(*args)
-            if (base_schema & (1<<query_col)) >> query_col == 1:
-                return(self.query.table.get_tail(int.from_bytes(base_indirection,byteorder = 'big'),query_col, page_pointer[0]))
-            else:
-                args = [query.table.name, base_tail, query_col + NUM_METAS, *page_pointer]
-                return int.from_bytes(BufferPool.get_records(*args), byteorder = "big"))
+            args = [query.table.name, 'Tail', query_col + NUM_METAS, *page_pointer]
+            return int.from_bytes(BufferPool.get_records(*args), byteorder = "big")
+
+    # read meta data columns
+    def read_meta_column(self, query, page_pointer, query_col, base_tail):
+        args = [query.table.name, base_tail, query_col, *page_pointer]
+        return int.from_bytes(BufferPool.get_records(*args), byteorder = "big")
 
     # write to one tail record to the tail page
     def write_rec(self, query, page_pointer, base_tail, meta_data, data_cols):
-        query.table.mg_rec_update(NUM_METAS+query_col, *page_pointer[0])
+        query.table.mg_rec_update(NUM_METAS + query_col, *page_pointer[0])
 
         new_rec = meta_data
         new_rec.extend(data_cols)

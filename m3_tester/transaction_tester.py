@@ -34,7 +34,7 @@ for i in range(0, 10000):
 # create TransactionWorkers, assign the thread with corresponding queue
 transaction_workers = []
 for i in range(num_threads):
-    transaction_workers.append(TransactionWorker([]))
+    transaction_workers.append(TransactionWorker([], grades_table))
 
 # generates 10k random transactions
 # each transaction will increment the first column of a record 5 times
