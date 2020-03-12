@@ -30,10 +30,6 @@ class Query:
     """
 
     def __init__(self, table):
-        self.select_count = 0
-        self.update_count = 0
-        self.delete_count = 0
-        self.sum_count = 0
         self.table = table
         #self.table.index = Index(self.table)
         # pointer contains page range, page number, indices within page
@@ -95,7 +91,7 @@ class Query:
     # return value will be a list of record dictionaries
     """
     def select(self, key, column, query_columns):
-        self.select_count += 1
+        self.table.select_count += 1
         # Get the indirection id given choice of key in specific column
         page_pointers = self.table.index.locate(column, key)
         #records = []
@@ -152,7 +148,7 @@ class Query:
     # Returns False if no records exist with given key or if the target record cannot be accessed due to 2PL locking
     """
     def update(self, key, *columns):
-        self.update_count += 1
+        self.table.update_count += 1
         ops_list = []
         # get the indirection in base pages given specified key\
         page_pointer = self.table.index.locate(self.table.key,key)
@@ -174,7 +170,7 @@ class Query:
         ops_temp['page_lacth'] = 0
         ops_list.append([tuple(page_pointer[0][0], page_pointer[0][1]), ops_temp])
         # read from meta-data column, rid
-        ops_temp['query_read_columns'] = RID_COLUMN
+        ops_temp['query_columns'] = RID_COLUMN
         ops_list.append([tuple(page_pointer[0][0], page_pointer[0][1]), ops_temp])
         #args = [self.table.name, "Base", INDIRECTION_COLUMN, *page_pointer[0]]
         #base_indirection_id = BufferPool.get_record(*args)
@@ -199,7 +195,7 @@ class Query:
                 ops_temp['meta-data'] = "Meta"
                 ops_temp['rec_location'] = None
                 ops_temp['page_lacth'] = 1
-                ops_list.append([tuple(update_range_index, tmp_indice), ops_temp])
+                ops_list.append([tuple(update_range_index, update_record_page_index), ops_temp])
                 #page_records = BufferPool.get_page(*args).num_records
                 #total_records = page_records + tmp_indice*MAX_RECORDS
                 #next_tid = total_records
@@ -223,7 +219,7 @@ class Query:
                 ops_temp['meta-data'] = "data"
                 ops_temp['rec_location'] = page_pointer[0][2]
                 ops_temp['page_lacth'] = 0
-                ops_list.append([tuple(page_pointer[0], page_pointer[1]), ops_temp])
+                ops_list.append([tuple(page_pointer[0][0], page_pointer[0][1]), ops_temp])
                 # if (int.from_bytes(base_indirection_id,byteorder='big') == MAXINT):
                 #     # compute new tail record indirection :  the indirection of tail record point backward to base pages
                 #     args = [self.table.name, "Base", RID_COLUMN, *page_pointer[0]]
@@ -291,7 +287,7 @@ class Query:
 
     def sum(self, start_range, end_range, aggregate_column_index):
         values = 0
-        self.sum_count += 1
+        self.table.sum_count += 1
         # locate all keys in index
         locations = self.table.index.locate_range(start_range, end_range, self.table.key)
 
@@ -361,7 +357,7 @@ class Query:
 
     # TODO : merging -> remove all invalidate record and key in index
     def delete(self, key):
-        self.delete_count += 1
+        self.table.delete_count += 1
         #page_pointer = self.table.index.locate(self.table.key,key)
         # null_value = []
 
@@ -407,7 +403,7 @@ class Query:
         ops_temp['meta-data'] = "Meta"
         ops_temp['rec_location'] = None
         ops_temp['page_lacth'] = 1
-        ops_list.append([tuple(update_range_index, tmp_indice), ops_temp])
+        ops_list.append([tuple(page_pointer[0][0], page_pointer[0][1]), ops_temp])
 
         # tmp_indice = self.table.get_latest_tail(INDIRECTION_COLUMN, update_range_index)
         # args = [self.table.name, "Tail", INDIRECTION_COLUMN, update_range_index, tmp_indice]

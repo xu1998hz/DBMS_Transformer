@@ -50,6 +50,11 @@ class Table:
         # initialize the priority queues based on working threads
         self.priority_queues = []
 
+        self.select_count = 0
+        self.update_count = 0
+        self.delete_count = 0
+        self.sum_count = 0
+
     def __merge(self):
         keys, p_indices = BufferPool.get_table_tails(self.name)
         for (col_index, rg_index), last_p_index in zip(keys, p_indices):
