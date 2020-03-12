@@ -101,9 +101,9 @@ class Query:
             ops['command_type'] = "select"
             ops['command_num'] = self.select_count
             ops['query_columns'] = query_columns
-            ops['r_w'] = 'read'
-            ops['base_tail'] = "Base"
-            ops['meta-data'] = "Data"
+            ops['r_w'] = "read"
+            ops['base_tail'] = "base"
+            ops['meta_data'] = "data"
             ops['rec_location'] = page_pointer[2]
             ops['page_lacth'] = 0
             ops_list.append([tuple(page_pointer[0], page_pointer[1]), ops])
@@ -163,9 +163,9 @@ class Query:
         ops_temp['command_num'] = self.update_count
 
         ops_temp['query_columns'] = INDIRECTION_COLUMN
-        ops_temp['r_w'] = 'read'
-        ops_temp['base_tail'] = "Base"
-        ops_temp['meta-data'] = "Meta"
+        ops_temp['r_w'] = "read"
+        ops_temp['base_tail'] = "base"
+        ops_temp['meta_data'] = "meta"
         ops_temp['rec_location'] = page_pointer[0][2]
         ops_temp['page_lacth'] = 0
         ops_list.append([tuple(page_pointer[0][0], page_pointer[0][1]), ops_temp])
@@ -190,9 +190,9 @@ class Query:
 
                 #args = [self.table.name, "Tail", INDIRECTION_COLUMN, update_range_index, tmp_indice]
                 ops_temp['query_columns'] = INDIRECTION_COLUMN
-                ops_temp['r_w'] = 'read'
-                ops_temp['base_tail'] = "Tail"
-                ops_temp['meta-data'] = "Meta"
+                ops_temp['r_w'] = "read"
+                ops_temp['base_tail'] = "tail"
+                ops_temp['meta_data'] = "meta"
                 ops_temp['rec_location'] = None
                 ops_temp['page_lacth'] = 1
                 ops_list.append([tuple(update_range_index, update_record_page_index), ops_temp])
@@ -204,9 +204,9 @@ class Query:
 
                 # From first if branch, compute the read to get next tail indirection
                 ops_temp['query_columns'] = RID_COLUMN
-                ops_temp['r_w'] = 'read'
-                ops_temp['base_tail'] = "Base"
-                ops_temp['meta-data'] = "Meta"
+                ops_temp['r_w'] = "read"
+                ops_temp['base_tail'] = "base"
+                ops_temp['meta_data'] = "meta"
                 ops_temp['rec_location'] = page_pointer[0][2]
                 ops_temp['page_lacth'] = 0
                 ops_list.append([tuple(page_pointer[0][0], page_pointer[0][1]), ops_temp])
@@ -214,9 +214,9 @@ class Query:
                 # write a tail record with specific column
                 # needs write
                 ops_temp['query_columns'] = query_col
-                ops_temp['r_w'] = 'write'
-                ops_temp['base_tail'] = "Tail"
-                ops_temp['meta-data'] = "data"
+                ops_temp['r_w'] = "write"
+                ops_temp['base_tail'] = "tail"
+                ops_temp['meta_data'] = "data"
                 ops_temp['rec_location'] = page_pointer[0][2]
                 ops_temp['page_lacth'] = 0
                 ops_list.append([tuple(page_pointer[0][0], page_pointer[0][1]), ops_temp])
@@ -239,9 +239,9 @@ class Query:
                 #     next_tail_columns[query_col] = val
 
                 ops_temp['query_columns'] = SCHEMA_ENCODING_COLUMN
-                ops_temp['r_w'] = 'read'
-                ops_temp['base_tail'] = "Base"
-                ops_temp['meta-data'] = "Meta"
+                ops_temp['r_w'] = "read"
+                ops_temp['base_tail'] = "base"
+                ops_temp['meta_data'] = "meta"
                 ops_temp['rec_location'] = page_pointer[0][2]
                 ops_temp['page_lacth'] = 0
                 ops_list.append([tuple(page_pointer[0][0], page_pointer[0][1]), ops_temp])
@@ -262,9 +262,9 @@ class Query:
 
                 # page is already latched
                 ops_temp['query_columns'] = INDIRECTION_COLUMN
-                ops_temp['r_w'] = 'write'
-                ops_temp['base_tail'] = "Base"
-                ops_temp['meta-data'] = "Meta"
+                ops_temp['r_w'] = "write"
+                ops_temp['base_tail'] = "base"
+                ops_temp['meta_data'] = "meta"
                 ops_temp['rec_location'] = page_pointer[0][2]
                 ops_temp['page_lacth'] = 0
                 ops_list.append([tuple(page_pointer[0][0], page_pointer[0][1]), ops_temp])
@@ -273,9 +273,9 @@ class Query:
                 # page = BufferPool.get_page(*args)
                 # page.update(update_record_index, next_tid)
                 ops_temp['query_columns'] = SCHEMA_ENCODING_COLUMN
-                ops_temp['r_w'] = 'write'
-                ops_temp['base_tail'] = "Base"
-                ops_temp['meta-data'] = "Meta"
+                ops_temp['r_w'] = "write"
+                ops_temp['base_tail'] = "base"
+                ops_temp['meta_data'] = "meta"
                 ops_temp['rec_location'] = page_pointer[0][2]
                 ops_temp['page_lacth'] = 0
                 ops_list.append([tuple(page_pointer[0][0], page_pointer[0][1]), ops_temp])
@@ -313,25 +313,25 @@ class Query:
             page_pointer = locations[i]
 
             ops_temp['query_columns'] = SCHEMA_ENCODING_COLUMN
-            ops_temp['r_w'] = 'read'
-            ops_temp['base_tail'] = "Base"
-            ops_temp['meta-data'] = "Meta"
+            ops_temp['r_w'] = "read"
+            ops_temp['base_tail'] = "base"
+            ops_temp['meta_data'] = "meta"
             ops_temp['rec_location'] = page_pointer[0][2]
             ops_temp['page_lacth'] = 0
             ops_list.append([tuple(page_pointer[0][0], page_pointer[0][1]), ops_temp])
 
             ops_temp['query_columns'] = INDIRECTION_COLUMN
-            ops_temp['r_w'] = 'read'
-            ops_temp['base_tail'] = "Base"
-            ops_temp['meta-data'] = "Meta"
+            ops_temp['r_w'] = "read"
+            ops_temp['base_tail'] = "base"
+            ops_temp['meta_data'] = "meta"
             ops_temp['rec_location'] = page_pointer[0][2]
             ops_temp['page_lacth'] = 0
             ops_list.append([tuple(page_pointer[0][0], page_pointer[0][1]), ops_temp])
 
             ops_temp['query_columns'] = aggregate_column_index
-            ops_temp['r_w'] = 'read'
-            ops_temp['base_tail'] = "Base"
-            ops_temp['meta-data'] = "data"
+            ops_temp['r_w'] = "read"
+            ops_temp['base_tail'] = "base"
+            ops_temp['meta_data'] = "data"
             ops_temp['rec_location'] = page_pointer[0][2]
             ops_temp['page_lacth'] = 0
             ops_list.append([tuple(page_pointer[0][0], page_pointer[0][1]), ops_temp])
@@ -387,9 +387,9 @@ class Query:
         ops_temp['command_num'] = self.delete_count
 
         ops_temp['query_columns'] = INDIRECTION_COLUMN
-        ops_temp['r_w'] = 'read'
-        ops_temp['base_tail'] = "Base"
-        ops_temp['meta-data'] = "Meta"
+        ops_temp['r_w'] = "read"
+        ops_temp['base_tail'] = "base"
+        ops_temp['meta_data'] = "meta"
         ops_temp['rec_location'] = page_pointer[0][2]
         ops_temp['page_lacth'] = 0
         ops_list.append([tuple(page_pointer[0][0], page_pointer[0][1]), ops_temp])
@@ -398,9 +398,9 @@ class Query:
         # base_indirection_id = BufferPool.get_record(*args)
 
         ops_temp['query_columns'] = RID_COLUMN
-        ops_temp['r_w'] = 'read'
-        ops_temp['base_tail'] = "Base"
-        ops_temp['meta-data'] = "Meta"
+        ops_temp['r_w'] = "read"
+        ops_temp['base_tail'] = "base"
+        ops_temp['meta_data'] = "meta"
         ops_temp['rec_location'] = page_pointer[0][2]
         ops_temp['page_lacth'] = 0
         ops_list.append([tuple(page_pointer[0][0], page_pointer[0][1]), ops_temp])
@@ -410,9 +410,9 @@ class Query:
         # base_id = int.from_bytes(base_rid, byteorder='big')
 
         ops_temp['query_columns'] = INDIRECTION_COLUMN
-        ops_temp['r_w'] = 'read'
-        ops_temp['base_tail'] = "Tail"
-        ops_temp['meta-data'] = "Meta"
+        ops_temp['r_w'] = "read"
+        ops_temp['base_tail'] = "tail"
+        ops_temp['meta_data'] = "meta"
         ops_temp['rec_location'] = None
         ops_temp['page_lacth'] = 1
         ops_list.append([tuple(page_pointer[0][0], page_pointer[0][1]), ops_temp])
@@ -435,9 +435,9 @@ class Query:
         #     next_tail_indirection = int.from_bytes(base_indirection_id,byteorder='big')
 
         ops_temp['query_columns'] = SCHEMA_ENCODING_COLUMN
-        ops_temp['r_w'] = 'read'
-        ops_temp['base_tail'] = "Base"
-        ops_temp['meta-data'] = "Meta"
+        ops_temp['r_w'] = "read"
+        ops_temp['base_tail'] = "base"
+        ops_temp['meta_data'] = "meta"
         ops_temp['rec_location'] = page_pointer[0][2]
         ops_temp['page_lacth'] = 0
         ops_list.append([tuple(page_pointer[0][0], page_pointer[0][1]), ops_temp])
@@ -458,9 +458,9 @@ class Query:
 
         # overwrite base page with new metadata
         ops_temp['query_columns'] = INDIRECTION_COLUMN
-        ops_temp['r_w'] = 'write'
-        ops_temp['base_tail'] = "Base"
-        ops_temp['meta-data'] = "Meta"
+        ops_temp['r_w'] = "write"
+        ops_temp['base_tail'] = "base"
+        ops_temp['meta_data'] = "meta"
         ops_temp['rec_location'] = page_pointer[0][2]
         ops_temp['page_lacth'] = 0
         ops_list.append([tuple(page_pointer[0][0], page_pointer[0][1]), ops_temp])
@@ -470,9 +470,9 @@ class Query:
         # page.update(update_record_index, next_tid)
 
         ops_temp['query_columns'] = SCHEMA_ENCODING_COLUMN
-        ops_temp['r_w'] = 'write'
-        ops_temp['base_tail'] = "Base"
-        ops_temp['meta-data'] = "Meta"
+        ops_temp['r_w'] = "write"
+        ops_temp['base_tail'] = "base"
+        ops_temp['meta_data'] = "meta"
         ops_temp['rec_location'] = page_pointer[0][2]
         ops_temp['page_lacth'] = 0
         ops_list.append([tuple(page_pointer[0][0], page_pointer[0][1]), ops_temp])
