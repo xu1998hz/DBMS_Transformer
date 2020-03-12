@@ -37,6 +37,5 @@ class Transaction:
         for query, args in self.queries:
             r_w_ops_list = query(*args)
             for r_w_ops in r_w_ops_list:
-                if r_w_ops[1]['command_type'] == "select":
-                    # locate the priority queue
-                    query.table.priority_queues[self.num_queue][r_w_ops[0]].put(r_w_ops[1])
+                # locate the priority queue
+                query.table.priority_queues[self.num_queue][r_w_ops[0]].put(r_w_ops[1])
