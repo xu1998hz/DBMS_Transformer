@@ -45,7 +45,7 @@ class TransactionWorker:
     def run(self):
         for transaction in self.transactions:
             # each transaction returns True if committed or False if aborted
-            self.stats.append(transaction.run())
+            self.stats.append(transaction.planning_stage())
         # stores the number of transactions that committed
         self.result = len(list(filter(lambda x: x, self.stats)))
 
@@ -61,7 +61,7 @@ class TransactionWorker:
             args = [query.table.name, 'Tail', query_col + NUM_METAS, *page_pointer]
             return int.from_bytes(BufferPool.get_records(*args), byteorder = "big")
 
-    # read meta data columns 
+    # read meta data columns
     def read_meta_column(self, query, page_pointer, query_col, base_tail):
         args = [query.table.name, base_tail, query_col, *page_pointer]
         return int.from_bytes(BufferPool.get_records(*args), byteorder = "big")

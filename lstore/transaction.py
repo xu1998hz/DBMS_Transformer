@@ -23,15 +23,6 @@ class Transaction:
     def add_query(self, query, *args):
         self.queries.append((query, args))
 
-    # If you choose to implement this differently this method must still return True if transaction commits or False on abort
-    def run(self):
-        for query, args in self.queries:
-            result = query(*args)
-            # If the query has failed the transaction should abort\
-            if result == False:
-                return self.abort()
-        return self.commit()
-
     # current thread is getting ready to plan operations inside one transaction
     def planning_stage(self):
         for query, args in self.queries:
