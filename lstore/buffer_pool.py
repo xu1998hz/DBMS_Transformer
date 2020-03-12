@@ -1,5 +1,7 @@
 from lstore.config import *
 from lstore.page import *
+from collections import defaultdict
+import threading 
 import os
 import heapq
 import pickle
@@ -15,7 +17,6 @@ def read_page(page_path):
     new_page.from_file(page)
     f.close()
     return new_page
-
 
 def write_page(page, page_path):
     # Create if not existed
@@ -40,7 +41,7 @@ class BufferPool:
 
     tps = {}  # Key: (table_name, col_index, page_range_index), value: tps
     latest_tail = {}  # Key: (table_name, col_index, page_range_index), value: lastest tail page id of specified page range
-
+    tid_locks = defaultdict(lambda: defaultdict(threading.Lock))# Key: (table_name, col_index, page_range_index), value: threading lock  
     def __init__(self):
         # print("Init BufferPool. Do Nothing ...")
         pass
@@ -198,11 +199,22 @@ class BufferPool:
     @classmethod
     def get_latest_tail(cls, t_name, column_id, page_range_id):
         "Return Latest/Last Tail Base Index of given table, column and page range"
-        return cls.latest_tail[t_name][(column_id, page_range_id)]
+        tid_counter = cls.latest_tail[t_name][(column_id, page_range_id)]
+        return tid_counter
 
     @classmethod
     def set_latest_tail(cls, t_name, column_id, page_range_id, value=0):
         cls.latest_tail[t_name][(column_id, page_range_id)] = value
+
+    @classmethod
+    def acquire_tail_lock(cls, t_name, column_id, page_range_id):
+        "Return Latest/Last Tail Base Index of given table, column and page range"
+        cls.tid_locks[t_name][(column_id, page_range_id)].acquire()
+
+    @classmethod
+    def release_tail_lock(cls, t_name, column_id, page_range_id):
+        cls.tid_locks[t_name][(column_id, page_range_id)].release()
+
 
     @classmethod
     def copy_latest_tail(cls, old_latest_tail):

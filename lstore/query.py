@@ -3,7 +3,7 @@ from lstore.index import Index
 from lstore.page import Page
 from lstore.buffer_pool import BufferPool
 from lstore.config import *
-from lstore.page_range import *
+from lstore.transaction import Transaction
 from copy import copy
 import re
 from time import time
@@ -11,17 +11,13 @@ import datetime
 from functools import reduce
 from operator import add
 import threading
-# TODO: Change RID to all integer and set offset bit
-# TODO : implement all queries by indexing
-# TODO : implement page range
-# TODO : support non primary key selection
 
 
 def datetime_to_int(dt):
     return int(dt.strftime("%Y%m%d%H%M%S"))
 
 class Query:
-     """
+    """
     # Creates a Query object that can perform different queries on the specified table 
     Queries that fail must return False
     Queries that succeed should return the result or True
@@ -85,6 +81,12 @@ class Query:
         page_pointer = self.table.index.locate(column, key)
         records = []
         for i in range(len(page_pointer)):
+            # Acquire page lock 
+            args = [self.table.name, "Base", SCHEMA_ENCODING_COLUMN, page_pointer[i][0], page_pointer[i][1]]
+            BufferPool.get_page(*args).acquire_lock()
+            args = [self.table.name, "Base", INDIRECTION_COLUMN, page_pointer[i][0], page_pointer[i][1]]
+            BufferPool.get_page(*args).acquire_lock()
+
             # collect base meta datas of each record
             args = [self.table.name, "Base", SCHEMA_ENCODING_COLUMN, *page_pointer[i]]
             base_schema = int.from_bytes(BufferPool.get_record(*args), byteorder='big')
@@ -99,11 +101,12 @@ class Query:
                     res.append(None)
                     continue
                 if (base_schema & (1<<query_col))>>query_col == 1:
+                    # Debug : lock tail page 
                     res.append(self.table.get_tail(int.from_bytes(base_indirection,byteorder = 'big'),query_col, page_pointer[i][0]))
                 else:
                     args = [self.table.name, "Base", query_col + NUM_METAS, *page_pointer[i]]
                     res.append(int.from_bytes(BufferPool.get_record(*args), byteorder="big"))
-
+           
             # construct the record with rid, primary key, columns
             args = [self.table.name, "Base", RID_COLUMN, *page_pointer[i]]
             rid = BufferPool.get_record(*args)
@@ -112,6 +115,13 @@ class Query:
             prim_key = BufferPool.get_record(*args)
             record = Record(rid, prim_key, res)
             records.append(record)
+
+            # Release page latching 
+            args = [self.table.name, "Base", SCHEMA_ENCODING_COLUMN, page_pointer[i][0], page_pointer[i][1]]
+            BufferPool.get_page(*args).release_lock()
+            args = [self.table.name, "Base", INDIRECTION_COLUMN, page_pointer[i][0], page_pointer[i][1]]
+            BufferPool.get_page(*args).release_lock()
+
         return records
 
     """
@@ -126,21 +136,28 @@ class Query:
         # if primary key in index is also updated, then insert new entries into primary key index
         if (columns[self.table.key] != None ):
              self.table.index.update_index(columns[self.table.key],page_pointer[0],self.table.key)
+       
+        # Acquire page lock from any meta data 
+        args = [self.table.name, "Base", INDIRECTION_COLUMN, update_range_index, update_record_page_index]
+        BufferPool.get_page(*args).acquire_lock()   
+
+        # Meta data   
         args = [self.table.name, "Base", INDIRECTION_COLUMN, *page_pointer[0]]
         base_indirection_id = BufferPool.get_record(*args)
         args = [self.table.name, "Base", RID_COLUMN, *page_pointer[0]]
-        base_rid = BufferPool.get_record(*args)
-        base_id = int.from_bytes(base_rid, byteorder='big')
+        base_id = int.from_bytes(BufferPool.get_record(*args), byteorder='big')
 
         for query_col,val in enumerate(columns):
             if val == None:
                 continue
             else:
-                # self.table.page_directory["Base"][NUM_METAS+query_col][update_range_index].Hash_insert(int.from_bytes(base_rid,byteorder='big'))
                 # compute new tail record TID
                 self.table.mg_rec_update(NUM_METAS+query_col, *page_pointer[0])
+                # TID computation protection 
+                BufferPool.acquire_tail_lock(self.table.name,INDIRECTION_COLUMN,update_range_index)
                 tmp_indice = self.table.get_latest_tail(INDIRECTION_COLUMN, update_range_index)
                 args = [self.table.name, "Tail", INDIRECTION_COLUMN, update_range_index, tmp_indice]
+                BufferPool.get_page(*args).acquire_lock()   
                 page_records = BufferPool.get_page(*args).num_records
                 total_records = page_records + tmp_indice*MAX_RECORDS
                 next_tid = total_records
@@ -177,6 +194,10 @@ class Query:
                 meta_data.extend(next_tail_columns)
                 tail_data = meta_data
                 self.table.tail_page_write(tail_data, update_range_index)
+                # Release lock from tail page range 
+                args = [self.table.name, "Tail", INDIRECTION_COLUMN, update_range_index, tmp_indice]
+                BufferPool.get_page(*args).release_lock()  
+                BufferPool.release_tail_lock(self.table.name,INDIRECTION_COLUMN,update_range_index)
 
                 # overwrite base page with new metadata
                 args = [self.table.name, "Base", INDIRECTION_COLUMN, page_pointer[0][0], page_pointer[0][1]]
@@ -186,10 +207,13 @@ class Query:
                 args = [self.table.name, "Base", SCHEMA_ENCODING_COLUMN, page_pointer[0][0], page_pointer[0][1]]
                 page = BufferPool.get_page(*args)
                 page.update(update_record_index, schema_encoding)
-
                 self.table.num_updates += 1
-        #self.table.event.set()
-        self.table.mergeThreadController()
+                # Release page latching 
+                args = [self.table.name, "Base", INDIRECTION_COLUMN,  update_range_index, update_record_page_index]
+                BufferPool.get_page(*args).release_lock()   
+
+
+        # self.table.mergeThreadController()
 
     """
     :param start_range: int         # Start of the key range to aggregate 
@@ -226,7 +250,7 @@ class Query:
                 values += temp
         return values
 
-     """
+    """
     # internal Method
     # Read a record with specified RID
     # Returns True upon succesful deletion
@@ -251,7 +275,6 @@ class Query:
         args = [self.table.name, "Base", RID_COLUMN, *page_pointer[0]]
         base_rid = BufferPool.get_record(*args)
         base_id = int.from_bytes(base_rid, byteorder='big')
-
         tmp_indice = self.table.get_latest_tail(INDIRECTION_COLUMN, update_range_index)
         args = [self.table.name, "Tail", INDIRECTION_COLUMN, update_range_index, tmp_indice]
         page_records = BufferPool.get_page(*args).num_records
@@ -307,7 +330,7 @@ class Query:
         r = self.select(key, self.table.key, [1] * self.table.num_columns)[0]
         if r is not False:
             updated_columns = [None] * self.table.num_columns
-            updated_columns[column] = r[column] + 1
+            updated_columns[column] = r.columns[column] + 1
             u = self.update(key, *updated_columns)
             return u
         return False

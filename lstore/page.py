@@ -1,4 +1,6 @@
 from lstore.config import *
+import threading
+
 
 class Page:
 
@@ -8,7 +10,13 @@ class Page:
         self.dirty = 0
         self.pinned = 0
         self.data = bytearray(4096)
+        self.lock = threading.Lock()
 
+    def acquire_lock(self):
+        self.lock.acquire()
+    def release_lock(self):
+        self.lock.release()
+        
     def has_capacity(self):
         return self.num_records < MAX_RECORDS
 

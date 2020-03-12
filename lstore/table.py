@@ -3,8 +3,8 @@ from lstore.config import *
 from lstore.index import Index
 from time import time
 import time as t
-from lstore.page_range import *
 from lstore.buffer_pool import BufferPool
+from lstore.lock_manager import rwlock_manager
 # queue is used for managing threads, thread is defined per column per page range
 from queue import Queue
 import threading
@@ -43,6 +43,7 @@ class Table:
         self.num_columns = num_columns
         # TODO: invalid input -> columns > MAX_COLUMNS
         self.index = Index(self)
+        self.rwlock_manager = rwlock_manager()
         self.num_updates = 0
         self.num_records = 0
         self.merge_pid = None

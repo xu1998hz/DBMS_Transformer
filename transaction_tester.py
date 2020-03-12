@@ -1,13 +1,19 @@
-from template.db import Database
-from template.query import Query
-from template.transaction import Transaction
-from template.transaction_worker import TransactionWorker
+from lstore.db import Database
+from lstore.query import Query
+from lstore.transaction import Transaction
+from lstore.transaction_worker import TransactionWorker
 
 import threading
 from random import choice, randint, sample, seed
 
+import os
+os.system("clear")
+
+if (os.path.isdir('ECS165')):
+    os.system("rm -rf ECS165")
+# Student Id and 4 grades
 db = Database()
-db.open('/home/pkhorsand/165a-winter-2020-private/db')
+db.open('ECS165')
 grades_table = db.create_table('Grades', 5, 0)
 
 keys = []
@@ -23,7 +29,7 @@ for i in range(0, 10000):
     q = Query(grades_table)
     q.insert(*records[key])
 
-# create TransactionWorkers
+# create TransactionWorkers 
 transaction_workers = []
 for i in range(num_threads):
     transaction_workers.append(TransactionWorker([]))
@@ -63,3 +69,4 @@ if s != num_committed_transactions * 5:
     print('Expected sum:', num_committed_transactions * 5, ', actual:', s, '. Failed.')
 else:
     print('Pass.')
+os.system("rm -rf ECS165")
