@@ -65,7 +65,7 @@ class Query:
 
         # initialize the queues inside priority_queues
         for queue in self.table.priority_queues:
-            queue[tuple(self.page_pointer[0], self.page_pointer[1])] = Queue()
+            queue[(self.page_pointer[0], self.page_pointer[1])] = Queue()
 
         # update all existed index
         for i in range(self.table.num_columns):
@@ -106,7 +106,7 @@ class Query:
             ops['meta_data'] = "data"
             ops['rec_location'] = page_pointer[2]
             ops['page_lacth'] = 0
-            ops_list.append([tuple(page_pointer[0], page_pointer[1]), ops])
+            ops_list.append([(page_pointer[0], page_pointer[1]), ops])
         #read_indexes = []
         #for i in range(len(page_pointer)):
             # collect base meta datas of each record
@@ -168,10 +168,10 @@ class Query:
         ops_temp['meta_data'] = "meta"
         ops_temp['rec_location'] = page_pointer[0][2]
         ops_temp['page_lacth'] = 0
-        ops_list.append([tuple(page_pointer[0][0], page_pointer[0][1]), ops_temp])
+        ops_list.append([(page_pointer[0][0], page_pointer[0][1]), ops_temp])
         # read from meta-data column, rid
         ops_temp['query_columns'] = RID_COLUMN
-        ops_list.append([tuple(page_pointer[0][0], page_pointer[0][1]), ops_temp])
+        ops_list.append([(page_pointer[0][0], page_pointer[0][1]), ops_temp])
         #args = [self.table.name, "Base", INDIRECTION_COLUMN, *page_pointer[0]]
         #base_indirection_id = BufferPool.get_record(*args)
         # args = [self.table.name, "Base", RID_COLUMN, *page_pointer[0]]
@@ -195,7 +195,7 @@ class Query:
                 ops_temp['meta_data'] = "meta"
                 ops_temp['rec_location'] = None
                 ops_temp['page_lacth'] = 1
-                ops_list.append([tuple(update_range_index, update_record_page_index), ops_temp])
+                ops_list.append([(update_range_index, update_record_page_index), ops_temp])
                 #page_records = BufferPool.get_page(*args).num_records
                 #total_records = page_records + tmp_indice*MAX_RECORDS
                 #next_tid = total_records
@@ -209,7 +209,7 @@ class Query:
                 ops_temp['meta_data'] = "meta"
                 ops_temp['rec_location'] = page_pointer[0][2]
                 ops_temp['page_lacth'] = 0
-                ops_list.append([tuple(page_pointer[0][0], page_pointer[0][1]), ops_temp])
+                ops_list.append([(page_pointer[0][0], page_pointer[0][1]), ops_temp])
 
                 # write a tail record with specific column
                 # needs write
@@ -219,7 +219,7 @@ class Query:
                 ops_temp['meta_data'] = "data"
                 ops_temp['rec_location'] = page_pointer[0][2]
                 ops_temp['page_lacth'] = 0
-                ops_list.append([tuple(page_pointer[0][0], page_pointer[0][1]), ops_temp])
+                ops_list.append([(page_pointer[0][0], page_pointer[0][1]), ops_temp])
                 # if (int.from_bytes(base_indirection_id,byteorder='big') == MAXINT):
                 #     # compute new tail record indirection :  the indirection of tail record point backward to base pages
                 #     args = [self.table.name, "Base", RID_COLUMN, *page_pointer[0]]
@@ -244,7 +244,7 @@ class Query:
                 ops_temp['meta_data'] = "meta"
                 ops_temp['rec_location'] = page_pointer[0][2]
                 ops_temp['page_lacth'] = 0
-                ops_list.append([tuple(page_pointer[0][0], page_pointer[0][1]), ops_temp])
+                ops_list.append([(page_pointer[0][0], page_pointer[0][1]), ops_temp])
 
                 #args = [self.table.name, "Base", SCHEMA_ENCODING_COLUMN, *page_pointer[0]]
                 #encoding_base = BufferPool.get_record(*args)
@@ -267,7 +267,7 @@ class Query:
                 ops_temp['meta_data'] = "meta"
                 ops_temp['rec_location'] = page_pointer[0][2]
                 ops_temp['page_lacth'] = 0
-                ops_list.append([tuple(page_pointer[0][0], page_pointer[0][1]), ops_temp])
+                ops_list.append([(page_pointer[0][0], page_pointer[0][1]), ops_temp])
                 # overwrite base page with new metadata
                 # args = [self.table.name, "Base", INDIRECTION_COLUMN, page_pointer[0][0], page_pointer[0][1]]
                 # page = BufferPool.get_page(*args)
@@ -278,7 +278,7 @@ class Query:
                 ops_temp['meta_data'] = "meta"
                 ops_temp['rec_location'] = page_pointer[0][2]
                 ops_temp['page_lacth'] = 0
-                ops_list.append([tuple(page_pointer[0][0], page_pointer[0][1]), ops_temp])
+                ops_list.append([(page_pointer[0][0], page_pointer[0][1]), ops_temp])
                 # args = [self.table.name, "Base", SCHEMA_ENCODING_COLUMN, page_pointer[0][0], page_pointer[0][1]]
                 # page = BufferPool.get_page(*args)
                 # page.update(update_record_index, schema_encoding)
@@ -318,7 +318,7 @@ class Query:
             ops_temp['meta_data'] = "meta"
             ops_temp['rec_location'] = page_pointer[0][2]
             ops_temp['page_lacth'] = 0
-            ops_list.append([tuple(page_pointer[0][0], page_pointer[0][1]), ops_temp])
+            ops_list.append([(page_pointer[0][0], page_pointer[0][1]), ops_temp])
 
             ops_temp['query_columns'] = INDIRECTION_COLUMN
             ops_temp['r_w'] = "read"
@@ -326,7 +326,7 @@ class Query:
             ops_temp['meta_data'] = "meta"
             ops_temp['rec_location'] = page_pointer[0][2]
             ops_temp['page_lacth'] = 0
-            ops_list.append([tuple(page_pointer[0][0], page_pointer[0][1]), ops_temp])
+            ops_list.append([(page_pointer[0][0], page_pointer[0][1]), ops_temp])
 
             ops_temp['query_columns'] = aggregate_column_index
             ops_temp['r_w'] = "read"
@@ -334,7 +334,7 @@ class Query:
             ops_temp['meta_data'] = "data"
             ops_temp['rec_location'] = page_pointer[0][2]
             ops_temp['page_lacth'] = 0
-            ops_list.append([tuple(page_pointer[0][0], page_pointer[0][1]), ops_temp])
+            ops_list.append([(page_pointer[0][0], page_pointer[0][1]), ops_temp])
 
         return ops_list
         # Aggregating columns specified
@@ -392,7 +392,7 @@ class Query:
         ops_temp['meta_data'] = "meta"
         ops_temp['rec_location'] = page_pointer[0][2]
         ops_temp['page_lacth'] = 0
-        ops_list.append([tuple(page_pointer[0][0], page_pointer[0][1]), ops_temp])
+        ops_list.append([(page_pointer[0][0], page_pointer[0][1]), ops_temp])
 
         # args = [self.table.name, "Base", INDIRECTION_COLUMN, *page_pointer[0]]
         # base_indirection_id = BufferPool.get_record(*args)
@@ -403,7 +403,7 @@ class Query:
         ops_temp['meta_data'] = "meta"
         ops_temp['rec_location'] = page_pointer[0][2]
         ops_temp['page_lacth'] = 0
-        ops_list.append([tuple(page_pointer[0][0], page_pointer[0][1]), ops_temp])
+        ops_list.append([(page_pointer[0][0], page_pointer[0][1]), ops_temp])
 
         # args = [self.table.name, "Base", RID_COLUMN, *page_pointer[0]]
         # base_rid = BufferPool.get_record(*args)
@@ -415,7 +415,7 @@ class Query:
         ops_temp['meta_data'] = "meta"
         ops_temp['rec_location'] = None
         ops_temp['page_lacth'] = 1
-        ops_list.append([tuple(page_pointer[0][0], page_pointer[0][1]), ops_temp])
+        ops_list.append([(page_pointer[0][0], page_pointer[0][1]), ops_temp])
 
         # tmp_indice = self.table.get_latest_tail(INDIRECTION_COLUMN, update_range_index)
         # args = [self.table.name, "Tail", INDIRECTION_COLUMN, update_range_index, tmp_indice]
@@ -440,7 +440,7 @@ class Query:
         ops_temp['meta_data'] = "meta"
         ops_temp['rec_location'] = page_pointer[0][2]
         ops_temp['page_lacth'] = 0
-        ops_list.append([tuple(page_pointer[0][0], page_pointer[0][1]), ops_temp])
+        ops_list.append([(page_pointer[0][0], page_pointer[0][1]), ops_temp])
 
         # args = [self.table.name, "Base", SCHEMA_ENCODING_COLUMN, *page_pointer[0]]
         # encoding_base = BufferPool.get_record(*args)  # in bytes
@@ -463,7 +463,7 @@ class Query:
         ops_temp['meta_data'] = "meta"
         ops_temp['rec_location'] = page_pointer[0][2]
         ops_temp['page_lacth'] = 0
-        ops_list.append([tuple(page_pointer[0][0], page_pointer[0][1]), ops_temp])
+        ops_list.append([(page_pointer[0][0], page_pointer[0][1]), ops_temp])
 
         # args = [self.table.name, "Base", INDIRECTION_COLUMN, page_pointer[0][0], page_pointer[0][1]]
         # page = BufferPool.get_page(*args)
@@ -475,7 +475,7 @@ class Query:
         ops_temp['meta_data'] = "meta"
         ops_temp['rec_location'] = page_pointer[0][2]
         ops_temp['page_lacth'] = 0
-        ops_list.append([tuple(page_pointer[0][0], page_pointer[0][1]), ops_temp])
+        ops_list.append([(page_pointer[0][0], page_pointer[0][1]), ops_temp])
 
         # args = [self.table.name, "Base", SCHEMA_ENCODING_COLUMN, page_pointer[0][0], page_pointer[0][1]]
         # page = BufferPool.get_page(*args)
