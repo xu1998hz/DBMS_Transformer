@@ -18,10 +18,11 @@ class TransactionWorker:
     """
     # Creates a transaction worker object.
     """
-    def __init__(self, transactions = []):
+    def __init__(self, transactions = [], table):
         self.stats = []
         self.transactions = transactions
         self.result = 0
+        self.table = table
         pass
 
     def add_transaction(self, t):
@@ -42,14 +43,22 @@ class TransactionWorker:
         for page_pointer in page_pointers:
             self.read_base_column(query, page_pointer, )
 
-    def run(self):
-        for transaction in self.transactions:
-            # each transaction returns True if committed or False if aborted
-            self.stats.append(transaction.planning_stage())
-        # stores the number of transactions that committed
-        self.result = len(list(filter(lambda x: x, self.stats)))
+    # def run(self):
+    #     for transaction in self.transactions:
+    #         # each transaction returns True if committed or False if aborted
+    #         self.stats.append(transaction.planning_stage())
+    #     # stores the number of transactions that committed
+    #     self.result = len(list(filter(lambda x: x, self.stats)))
 
-    def 
+    def planning_stage(self):
+        for transaction in self.transactions:
+            transaction.planning_stage()
+
+    def execution_stage(self):
+        for priority_queue in self.table.priority_queues:
+            for (page_range_index, page_index), queue in priority_queue:
+                while not queue.empty()
+
 
     # read data column from page pointer for specific query column, return specific value of record
     def read_data_column(self, query, page_pointer, query_col):
