@@ -49,6 +49,8 @@ class TransactionWorker:
         # stores the number of transactions that committed
         self.result = len(list(filter(lambda x: x, self.stats)))
 
+    def 
+
     # read data column from page pointer for specific query column, return specific value of record
     def read_data_column(self, query, page_pointer, query_col):
         args = [query.table.name, base_tail, SCHEMA_ENCODING_COLUMN, *page_pointer]

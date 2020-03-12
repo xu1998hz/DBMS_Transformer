@@ -261,12 +261,24 @@ class Query:
                 # self.table.tail_page_write(tail_data, update_range_index)
 
                 # page is already latched
-
+                ops_temp['query_columns'] = INDIRECTION_COLUMN
+                ops_temp['r_w'] = 'write'
+                ops_temp['base_tail'] = "Base"
+                ops_temp['meta-data'] = "Meta"
+                ops_temp['rec_location'] = page_pointer[0][2]
+                ops_temp['page_lacth'] = 0
+                ops_list.append([tuple(page_pointer[0][0], page_pointer[0][1]), ops_temp])
                 # overwrite base page with new metadata
                 # args = [self.table.name, "Base", INDIRECTION_COLUMN, page_pointer[0][0], page_pointer[0][1]]
                 # page = BufferPool.get_page(*args)
                 # page.update(update_record_index, next_tid)
-                #
+                ops_temp['query_columns'] = SCHEMA_ENCODING_COLUMN
+                ops_temp['r_w'] = 'write'
+                ops_temp['base_tail'] = "Base"
+                ops_temp['meta-data'] = "Meta"
+                ops_temp['rec_location'] = page_pointer[0][2]
+                ops_temp['page_lacth'] = 0
+                ops_list.append([tuple(page_pointer[0][0], page_pointer[0][1]), ops_temp])
                 # args = [self.table.name, "Base", SCHEMA_ENCODING_COLUMN, page_pointer[0][0], page_pointer[0][1]]
                 # page = BufferPool.get_page(*args)
                 # page.update(update_record_index, schema_encoding)
