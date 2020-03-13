@@ -31,7 +31,7 @@ class Simple_Tester:
     def init_trans_workers(self):
         transaction_workers = []
         for i in range(self.num_threads):
-            transaction_workers.append(TransactionWorker([], self.table))
+            transaction_workers.append(TransactionWorker([], self.table, i))
         return transaction_workers
 
     def thread_run(self, trans_workers):
@@ -174,7 +174,7 @@ class One_Thread_Tester:
 
     def init_trans_worker(self):
         self.table.init_priority_queues(1)
-        transaction_worker = TransactionWorker([], self.table)
+        transaction_worker = TransactionWorker([], self.table, 0)
         transaction = Transaction(0)
         q = Query(self.table)
         return q, transaction, transaction_worker
@@ -221,12 +221,12 @@ class One_Thread_Tester:
         os.system('rm -rf ECS165')
 
 def main():
-    print("\n*** One Thread Tester ***\n")
-    one_thread_tester = One_Thread_Tester()
-    one_thread_tester.run_all()
-    # print("\n*** Simple Quecc Tester ***\n")
-    # simple_tester = Simple_Tester()
-    # simple_tester.run_all()
+    # print("\n*** One Thread Tester ***\n")
+    # one_thread_tester = One_Thread_Tester()
+    # one_thread_tester.run_all()
+    print("\n*** Simple Quecc Tester ***\n")
+    simple_tester = Simple_Tester()
+    simple_tester.run_all()
 
 if __name__ == "__main__":
     os.system("clear")

@@ -19,12 +19,13 @@ class TransactionWorker:
     """
     # Creates a transaction worker object.
     """
-    def __init__(self, transactions, table):
+    def __init__(self, transactions, table, transaction_queue_index):
         self.stats = []
         self.transactions = transactions
         self.result = 0
         self.table = table
         self.puzzle = {}
+        self.transaction_queue_index = transaction_queue_index
         pass
 
     def add_transaction(self, t):
@@ -78,43 +79,44 @@ class TransactionWorker:
     """
 
     def execution_stage(self):
-        for priority_queue in self.table.priority_queues:
-            for (page_range_id, page_id), queue in priority_queue.items():
-                op_queue = deque(queue)
-                while op_queue:
-                    op = op_queue.popleft()
-                    command_type = op['command_type']
-                    command_num = op['command_num']
-                    if op['r_w'] == "read":
-                        if op['base_tail'] == "base":
-                            temp = self.read_base_data_column(op['page_pointer'], op['column_id'])
-                            key_args = tuple([command_type, command_num, "base", op['column_id'], tuple(op['page_pointer'])])
-                            self.puzzle[key_args] = temp
-                        else:
-                            base_indirection = self.puzzle[command_type, command_num, "base", INDIRECTION_COLUMN]
-                            temp = self.read_tail_data_column(op['page_pointer'], op['column_id'], base_indirection)
-                            key_args = tuple([command_type, command_num, "tail", op['column_id'], tuple(op['page_pointer'])])
-                            self.puzzle[key_args] = temp
+        # print("check")
+        priority_queue = self.table.priority_queues[self.transaction_queue_index]
+        for (page_range_id, page_id), queue in priority_queue.items():
+            op_queue = deque(queue)
+            while op_queue:
+                op = op_queue.popleft()
+                command_type = op['command_type']
+                command_num = op['command_num']
+                if op['r_w'] == "read":
+                    if op['base_tail'] == "base":
+                        temp = self.read_base_data_column(op['page_pointer'], op['column_id'])
+                        key_args = tuple([command_type, command_num, "base", op['column_id'], tuple(op['page_pointer'])])
+                        self.puzzle[key_args] = temp
                     else:
-                        if op['base_tail'] == "base":
-                            if op['column_id'] == INDIRECTION_COLUMN:
-                                args = tuple([command_type, command_num, "tail", op['INDIRECTION_COLUMN']])
-                                self.write_base(op['page_pointer'], op['column_id'], self.puzzle[args])
-                            else:
-                                args = tuple([command_type, command_num, "base", op['column_id'], tuple(op['page_pointer'])])
-                                old_schema = self.puzzle[args]
-                                if command_type == "update":
-                                    new_schema = old_schema | (1 << op['operation_column'])
-                                else:
-                                    new_schema = "1" * (self.table.num_columns + NUM_METAS)
-                                self.write_base(op['page_pointer'], op['column_id'], new_schema)
+                        base_indirection = self.puzzle[command_type, command_num, "base", INDIRECTION_COLUMN]
+                        temp = self.read_tail_data_column(op['page_pointer'], op['column_id'], base_indirection)
+                        key_args = tuple([command_type, command_num, "tail", op['column_id'], tuple(op['page_pointer'])])
+                        self.puzzle[key_args] = temp
+                else:
+                    if op['base_tail'] == "base":
+                        if op['column_id'] == INDIRECTION_COLUMN:
+                            args = tuple([command_type, command_num, "tail", op['INDIRECTION_COLUMN']])
+                            self.write_base(op['page_pointer'], op['column_id'], self.puzzle[args])
                         else:
-                            if op['write_data'] != None:
-                                self.write_tail(op['page_pointer'], op['column_id'], op['write_data'])
+                            args = tuple([command_type, command_num, "base", op['column_id'], tuple(op['page_pointer'])])
+                            old_schema = self.puzzle[args]
+                            if command_type == "update":
+                                new_schema = old_schema | (1 << op['operation_column'])
                             else:
-                                args = tuple([command_type, command_num, "base", op['column_id'], op['page_pointer']])
-                                self.write_tail(op['page_pointer'], op['column_id'], self.puzzle[args])
-            print(self.puzzle.values())
+                                new_schema = "1" * (self.table.num_columns + NUM_METAS)
+                            self.write_base(op['page_pointer'], op['column_id'], new_schema)
+                    else:
+                        if op['write_data'] != None:
+                            self.write_tail(op['page_pointer'], op['column_id'], op['write_data'])
+                        else:
+                            args = tuple([command_type, command_num, "base", op['column_id'], op['page_pointer']])
+                            self.write_tail(op['page_pointer'], op['column_id'], self.puzzle[args])
+        print(self.puzzle.values())
 
 
     # read data column from page pointer for specific query column, return specific value of record
