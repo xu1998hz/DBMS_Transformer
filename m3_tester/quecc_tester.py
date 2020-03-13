@@ -41,9 +41,11 @@ class Simple_Tester:
         for i, thread in enumerate(threads):
             print('Thread', i, 'started')
             thread.start()
-        for i, thread in enumerate(threads):
             thread.join()
             print('Thread', i, 'finished')
+        #for i, thread in enumerate(threads):
+
+
 
     '''
     Desired Output (order may be different but every one should appear exactly once):
@@ -146,8 +148,8 @@ class Simple_Tester:
     def run_all(self):
         self.setup()
         # self.simple_select()
-        self.simple_update()
-        # self.simple_sum()
+        # self.simple_update()
+        self.simple_sum()
         # self.simple_delete()
         os.system('rm -rf ECS165')
 

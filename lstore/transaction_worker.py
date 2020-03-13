@@ -81,11 +81,14 @@ class TransactionWorker:
 
     def execution_stage(self):
         # print("check")
+        # print(self.table.priority_queues)
         priority_queue = self.table.priority_queues[self.transaction_queue_index]
+        print("this is priority queue: ", self.transaction_queue_index)
         for (page_range_id, page_id), queue in priority_queue.items():
             op_queue = deque(queue)
             while op_queue:
                 op = op_queue.popleft()
+                print(op)
                 command_type = op['command_type']
                 command_num = op['command_num']
                 col_num = op['column_id']
@@ -157,7 +160,8 @@ class TransactionWorker:
                     result[command] = temp
             elif key[0] == "select":
                 result[command] = value
-        print(self.puzzle)
+        # print(self.puzzle)
+        print("===========================result===========================")
         print(result)
 
 
