@@ -73,7 +73,7 @@ class TransactionWorker:
 
     """
     #get op command_type + command_num
-    #if read values, store in self.puzzle -> dictionary key: (command_type, command_num, base_tail), value[column_num, data]
+    #if read values, store in self.puzzle -> dictionary key: (command_type, command_num, base_tail, op['column_id'], page_pointer), value[column_num, data]
     #if write values, check data in either dictionary or operation, then write the value
 
     """
@@ -87,6 +87,16 @@ class TransactionWorker:
                 op = op_queue.popleft()
                 command_type = op['command_type']
                 command_num = op['command_num']
+                col_num = op['column_id']
+
+                # if (last_c_num != command_num or last_c_type != command_type or last_col_num != col_num) and last_col_num > NUM_METAS:
+                #     for key, value in self.puzzle.items():
+                #         keyl = list(key)
+                #         if keyl[0] == "sum":
+                #             if keyl[0] == last_c_type and keyl[1] == last_c_num and key[3] == last_col_num:
+                #                 sum_value += self.puzzle[key]
+                #     print("sum ", last_col_num, " is ", sum_value)
+                #     sum_value = 0
                 if op['r_w'] == "read":
                     if op['base_tail'] == "base":
                         temp = self.read_base_data_column(op['page_pointer'], op['column_id'])
@@ -116,7 +126,24 @@ class TransactionWorker:
                         else:
                             args = tuple([command_type, command_num, "base", op['column_id'], op['page_pointer']])
                             self.write_tail(op['page_pointer'], op['column_id'], self.puzzle[args])
-        print(self.puzzle.values())
+
+
+                #construct sum value:
+        result = {}
+        for key, value in self.puzzle.items():
+            keyl = list(key)
+            command = tuple([keyl[0], keyl[1], keyl[3]])
+            if keyl[0] == "sum":
+                if (keyl[3] >= NUM_METAS):
+                    if command not in result.keys():
+                        result[command] = 0
+                    temp = result[command]
+                    temp += value
+                    result[command] = temp
+            elif key[0] == "select":
+                result[command] = value
+        # print(self.puzzle.values())
+        print(result)
 
 
     # read data column from page pointer for specific query column, return specific value of record
@@ -125,7 +152,7 @@ class TransactionWorker:
         return int.from_bytes(BufferPool.get_record(*args), byteorder = "big")
 
     def read_tail_data_column(self, page_pointer, column_id, base_indirection):
-        return(self.table.get_tail(int.from_bytes(base_indirection,byteorder = 'big'),column_id, page_pointer[0]))
+        return(self.table.get_tail(base_indirection, column_id, page_pointer[0]))
 
     # write to one tail record to the tail page
     def write_base(self, page_pointer, column_id, data):

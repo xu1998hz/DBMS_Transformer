@@ -325,13 +325,14 @@ class Query:
         locations = self.table.index.locate_range(start_range, end_range, self.table.key)
 
         ops_list = []
-        ops_temp = {}
 
-        ops_temp['command_type'] = "sum"
-        ops_temp['command_num'] = self.table.sum_count
 
         for i in range(len(locations)):
             page_pointer = locations[i]
+            ops_temp = {}
+
+            ops_temp['command_type'] = "sum"
+            ops_temp['command_num'] = self.table.sum_count
 
             ops_temp['column_id'] = SCHEMA_ENCODING_COLUMN
             ops_temp['r_w'] = "read"
@@ -341,7 +342,10 @@ class Query:
             ops_temp['page_lacth'] = 0
             ops_list.append([(page_pointer[0][0], page_pointer[0][1]), ops_temp])
             #ops_list.append([SCHEMA_ENCODING_COLUMN, ops_temp])
+            ops_temp = {}
 
+            ops_temp['command_type'] = "sum"
+            ops_temp['command_num'] = self.table.sum_count
             ops_temp['column_id'] = INDIRECTION_COLUMN
             ops_temp['r_w'] = "read"
             ops_temp['base_tail'] = "base"
@@ -350,14 +354,19 @@ class Query:
             ops_temp['page_lacth'] = 0
             ops_list.append([(page_pointer[0][0], page_pointer[0][1]), ops_temp])
         #    ops_list.append([INDIRECTION_COLUMN, ops_temp])
+            ops_temp = {}
 
-            ops_temp['column_id'] = aggregate_column_index
+            ops_temp['command_type'] = "sum"
+            ops_temp['command_num'] = self.table.sum_count
+            ops_temp['column_id'] = aggregate_column_index+NUM_METAS
             ops_temp['r_w'] = "read"
             ops_temp['base_tail'] = "base"
             ops_temp['meta_data'] = "data"
             ops_temp['page_pointer'] = page_pointer[0]
             ops_temp['page_lacth'] = 0
             ops_list.append([(page_pointer[0][0], page_pointer[0][1]), ops_temp])
+
+            #TODO: read tail data
             #ops_list.append([aggregate_column_index, ops_temp])
 
         return ops_list
