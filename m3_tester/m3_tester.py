@@ -1,12 +1,19 @@
-from template.db import Database
-from template.query import Query
-from template.transaction import Transaction
-from template.transaction_worker import TransactionWorker
-
+import sys
+sys.path.append(sys.path[0] + "/..")
+from lstore.db import Database
+from lstore.query import Query
+from lstore.transaction import Transaction
+from lstore.transaction_worker import TransactionWorker
+import threading
 from random import choice, randint, sample, seed
+import os
+os.system("clear")
+if (os.path.isdir('ECS165')):
+    os.system("rm -rf ECS165")
 
+# Student Id and 4 grades
 db = Database()
-db.open('/home/pkhorsand/165a-winter-2020-private/db')
+db.open('ECS165')
 grades_table = db.create_table('Grades', 5, 0)
 
 keys = []
@@ -29,7 +36,7 @@ for i in range(num_threads):
     transaction_workers.append(TransactionWorker())
 
 for i in range(10000):
-    key = random.choice(keys)
+    key = choice(keys)
     record = records[key]
     c = record[1]
     transaction = Transaction()
@@ -43,14 +50,17 @@ for i in range(10000):
 
 threads = []
 for transaction_worker in transaction_workers:
-    threads.append(threading.Thread(transaction_worker.run, args = ()))
+    threads.append(threading.Thread(target = transaction_worker.run, args = ()))
 
 for thread in threads:
     thread.start()
 
 for thread in threads:
-    thread.wait()
+    thread.join()
 
 num_committed_transactions = sum(t.result for t in transaction_workers)
+print(num_committed_transactions, 'transaction committed.')
 
 db.close()
+
+os.system("rm -rf ECS165")
