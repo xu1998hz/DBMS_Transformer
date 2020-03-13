@@ -146,8 +146,8 @@ class Simple_Tester:
     def run_all(self):
         self.setup()
         # self.simple_select()
-        # self.simple_update()
-        self.simple_sum()
+        self.simple_update()
+        # self.simple_sum()
         # self.simple_delete()
         os.system('rm -rf ECS165')
 
@@ -215,14 +215,14 @@ class One_Thread_Tester:
     def run_all(self):
         self.setup()
         # self.one_select()
-        # self.one_update()
-        self.one_sum()
+        self.one_update()
+        # self.one_sum()
         # self.one_delete()
         os.system('rm -rf ECS165')
 
 def main():
     # print("\n*** One Thread Tester ***\n")
-    # one_thread_tester = One_Thread_Tester()
+    #`one_thread_tester = One_Thread_Tester()
     # one_thread_tester.run_all()
     print("\n*** Simple Quecc Tester ***\n")
     simple_tester = Simple_Tester()

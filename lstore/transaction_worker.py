@@ -103,14 +103,14 @@ class TransactionWorker:
                         key_args = tuple([command_type, command_num, "base", op['column_id'], tuple(op['page_pointer'])])
                         self.puzzle[key_args] = temp
                     else:
-                        base_indirection = self.puzzle[command_type, command_num, "base", INDIRECTION_COLUMN]
+                        base_indirection = self.puzzle[command_type, command_num, "base", INDIRECTION_COLUMN,  tuple(op['page_pointer'])]
                         temp = self.read_tail_data_column(op['page_pointer'], op['column_id'], base_indirection)
                         key_args = tuple([command_type, command_num, "tail", op['column_id'], tuple(op['page_pointer'])])
                         self.puzzle[key_args] = temp
                 else:
                     if op['base_tail'] == "base":
                         if op['column_id'] == INDIRECTION_COLUMN:
-                            args = tuple([command_type, command_num, "tail", op['INDIRECTION_COLUMN']])
+                            args = tuple([command_type, command_num, "tail", op['column_id'], tuple(op['page_pointer'])])
                             self.write_base(op['page_pointer'], op['column_id'], self.puzzle[args])
                         else:
                             args = tuple([command_type, command_num, "base", op['column_id'], tuple(op['page_pointer'])])
@@ -143,7 +143,7 @@ class TransactionWorker:
             elif key[0] == "select":
                 result[command] = value
         # print(self.puzzle.values())
-        print(result)
+        # print(result
 
 
     # read data column from page pointer for specific query column, return specific value of record
@@ -161,10 +161,9 @@ class TransactionWorker:
         page.update(page_pointer[2], data)
 
     def write_tail(self, page_pointer, column_id, data):
-
-        self.table.mg_rec_update(column_id, *page_pointer[0])
+        self.table.mg_rec_update(column_id, *page_pointer)
         #self.table.tail_page_write(new_rec, page_pointer[0])
-        self.table.tail_column_write(data, column_id, *page_pointer[0])
+        self.table.tail_column_write(data, column_id, page_pointer[0])
 
 #need to sperate the base condition and tail condition
         # update base page indirection and schema encoding

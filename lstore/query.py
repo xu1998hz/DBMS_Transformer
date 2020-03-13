@@ -179,7 +179,16 @@ class Query:
         ops_list.append([(page_pointer[0][0], page_pointer[0][1]), ops_temp])
         #ops_list.append([INDIRECTION_COLUMN, ops_temp])
         # read from meta-data column, rid
+        ops_temp = {}
+        ops_temp['command_type'] = "update"
+        ops_temp['command_num'] = self.table.update_count
+
         ops_temp['column_id'] = RID_COLUMN
+        ops_temp['r_w'] = "read"
+        ops_temp['base_tail'] = "base"
+        ops_temp['meta_data'] = "meta"
+        ops_temp['page_pointer'] = page_pointer[0]
+        ops_temp['page_lacth'] = 0
         ops_list.append([(page_pointer[0][0], page_pointer[0][1]), ops_temp])
         #ops_list.append([RID_COLUMN, ops_temp])
         #args = [self.table.name, "Base", INDIRECTION_COLUMN, *page_pointer[0]]
@@ -200,6 +209,10 @@ class Query:
                 tmp_indice = self.table.get_latest_tail(INDIRECTION_COLUMN, update_range_index)
 
                 #args = [self.table.name, "Tail", INDIRECTION_COLUMN, update_range_index, tmp_indice]
+                ops_temp = {}
+                ops_temp['command_type'] = "update"
+                ops_temp['command_num'] = self.table.update_count
+
                 ops_temp['column_id'] = INDIRECTION_COLUMN
                 ops_temp['r_w'] = "read"
                 ops_temp['base_tail'] = "tail"
@@ -215,6 +228,10 @@ class Query:
                 # the record is firstly updated
 
                 # From first if branch, compute the read to get next tail indirection
+                ops_temp = {}
+                ops_temp['command_type'] = "update"
+                ops_temp['command_num'] = self.table.update_count
+
                 ops_temp['column_id'] = RID_COLUMN
                 ops_temp['r_w'] = "read"
                 ops_temp['base_tail'] = "base"
@@ -226,6 +243,10 @@ class Query:
 
                 # write a tail record with specific column
                 # needs write
+                ops_temp = {}
+                ops_temp['command_type'] = "update"
+                ops_temp['command_num'] = self.table.update_count
+
                 ops_temp['column_id'] = query_col + NUM_METAS
                 ops_temp['r_w'] = "write"
                 ops_temp['base_tail'] = "tail"
@@ -252,6 +273,9 @@ class Query:
                 #     base_indirection = int.from_bytes(base_indirection_id, byteorder = 'big')
                 #     next_tail_columns = self.table.get_tail_columns(base_indirection, update_range_index)
                 #     next_tail_columns[query_col] = val
+                ops_temp = {}
+                ops_temp['command_type'] = "update"
+                ops_temp['command_num'] = self.table.update_count
 
                 ops_temp['column_id'] = SCHEMA_ENCODING_COLUMN
                 ops_temp['r_w'] = "read"
@@ -277,6 +301,9 @@ class Query:
                 # self.table.tail_page_write(tail_data, update_range_index)
 
                 # page is already latched
+                ops_temp = {}
+                ops_temp['command_type'] = "update"
+                ops_temp['command_num'] = self.table.update_count
 
                 ops_temp['column_id'] = INDIRECTION_COLUMN
                 ops_temp['r_w'] = "write"
@@ -290,6 +317,10 @@ class Query:
                 # args = [self.table.name, "Base", INDIRECTION_COLUMN, page_pointer[0][0], page_pointer[0][1]]
                 # page = BufferPool.get_page(*args)
                 # page.update(update_record_index, next_tid)
+                ops_temp = {}
+                ops_temp['command_type'] = "update"
+                ops_temp['command_num'] = self.table.update_count
+
                 ops_temp['column_id'] = SCHEMA_ENCODING_COLUMN
                 ops_temp['r_w'] = "write"
                 ops_temp['base_tail'] = "base"
