@@ -247,7 +247,7 @@ class Query:
                 ops_temp['command_type'] = "update"
                 ops_temp['command_num'] = self.table.update_count
 
-                ops_temp['column_id'] = query_col + NUM_METAS
+                ops_temp['column_id'] = query_col + NUM_METAS + 1
                 ops_temp['r_w'] = "write"
                 ops_temp['base_tail'] = "tail"
                 ops_temp['meta_data'] = "data"
@@ -389,7 +389,7 @@ class Query:
 
             ops_temp['command_type'] = "sum"
             ops_temp['command_num'] = self.table.sum_count
-            ops_temp['column_id'] = aggregate_column_index+NUM_METAS
+            ops_temp['column_id'] = aggregate_column_index+NUM_METAS+1
             ops_temp['r_w'] = "read"
             ops_temp['base_tail'] = "base"
             ops_temp['meta_data'] = "data"
