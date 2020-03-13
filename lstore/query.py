@@ -346,6 +346,7 @@ class Query:
                 # args = [self.table.name, "Base", SCHEMA_ENCODING_COLUMN, page_pointer[0][0], page_pointer[0][1]]
                 # page = BufferPool.get_page(*args)
                 # page.update(update_record_index, schema_encoding)
+                self.table.update_count += 1
 
         self.table.num_updates += 1
         self.table.mergeThreadController()
@@ -476,6 +477,9 @@ class Query:
 
         # args = [self.table.name, "Base", INDIRECTION_COLUMN, *page_pointer[0]]
         # base_indirection_id = BufferPool.get_record(*args)
+        ops_temp = {}
+        ops_temp['command_type'] = "delete"
+        ops_temp['command_num'] = self.table.delete_count
 
         ops_temp['column_id'] = RID_COLUMN
         ops_temp['r_w'] = "read"
@@ -490,6 +494,9 @@ class Query:
         # args = [self.table.name, "Base", RID_COLUMN, *page_pointer[0]]
         # base_rid = BufferPool.get_record(*args)
         # base_id = int.from_bytes(base_rid, byteorder='big')
+        ops_temp = {}
+        ops_temp['command_type'] = "delete"
+        ops_temp['command_num'] = self.table.delete_count
 
         ops_temp['column_id'] = INDIRECTION_COLUMN
         ops_temp['r_w'] = "read"
@@ -517,6 +524,9 @@ class Query:
         #     next_tail_indirection = int.from_bytes(next_tail_indirection, byteorder='big')
         # else:
         #     next_tail_indirection = int.from_bytes(base_indirection_id,byteorder='big')
+        ops_temp = {}
+        ops_temp['command_type'] = "delete"
+        ops_temp['command_num'] = self.table.delete_count
 
         ops_temp['column_id'] = SCHEMA_ENCODING_COLUMN
         ops_temp['r_w'] = "read"
@@ -541,6 +551,10 @@ class Query:
         # self.table.tail_page_write(tail_data, update_range_index)
 
         # overwrite base page with new metadata
+        ops_temp = {}
+        ops_temp['command_type'] = "delete"
+        ops_temp['command_num'] = self.table.delete_count
+
         ops_temp['column_id'] = INDIRECTION_COLUMN
         ops_temp['r_w'] = "write"
         ops_temp['base_tail'] = "base"
@@ -552,6 +566,9 @@ class Query:
         # args = [self.table.name, "Base", INDIRECTION_COLUMN, page_pointer[0][0], page_pointer[0][1]]
         # page = BufferPool.get_page(*args)
         # page.update(update_record_index, next_tid)
+        ops_temp = {}
+        ops_temp['command_type'] = "delete"
+        ops_temp['command_num'] = self.table.delete_count
 
         ops_temp['column_id'] = SCHEMA_ENCODING_COLUMN
         ops_temp['r_w'] = "write"
