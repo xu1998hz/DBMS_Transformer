@@ -25,6 +25,7 @@ class TransactionWorker:
         self.result = 0
         self.table = table
         self.puzzle = {}
+        self.tail_indirections = {}
         self.transaction_queue_index = transaction_queue_index
         pass
 
@@ -104,9 +105,21 @@ class TransactionWorker:
                         self.puzzle[key_args] = temp
                     else:
                         base_indirection = self.puzzle[command_type, command_num, "base", INDIRECTION_COLUMN,  tuple(op['page_pointer'])]
+
+                        while base_indirection != MAXINT:
+                            # print(base_indirection)
+                            print(command_type, "tail", INDIRECTION_COLUMN, tuple(op['page_pointer']))
+                            base_indirection = self.tail_indirections[command_type, "tail", INDIRECTION_COLUMN, tuple(op['page_pointer'])]
+
+                        #     base_indirection = self.puzzle[command_type, command_num, "base", INDIRECTION_COLUMN,  tuple(op['page_pointer'])]
+
                         temp = self.read_tail_data_column(op['page_pointer'], op['column_id'], base_indirection)
                         key_args = tuple([command_type, command_num, "tail", op['column_id'], tuple(op['page_pointer'])])
+                        # print(key_args)
                         self.puzzle[key_args] = temp
+                        self.tail_indirections[command_type, "tail", INDIRECTION_COLUMN, tuple(op['page_pointer'])] = MAXINT
+                        print(command_type, "tail", INDIRECTION_COLUMN, tuple(op['page_pointer']),
+                              self.tail_indirections[command_type, "tail", INDIRECTION_COLUMN, tuple(op['page_pointer'])])
                 else:
                     if op['base_tail'] == "base":
                         if op['column_id'] == INDIRECTION_COLUMN:
@@ -143,6 +156,7 @@ class TransactionWorker:
             elif key[0] == "select":
                 result[command] = value
         print(self.puzzle)
+        # print(result)
 
 
     # read data column from page pointer for specific query column, return specific value of record
