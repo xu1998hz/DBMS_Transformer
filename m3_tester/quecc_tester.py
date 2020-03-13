@@ -100,7 +100,7 @@ class Simple_Tester:
                     k = k + 1
                 transaction_workers[i % self.num_threads].add_transaction(transaction)
         self.thread_run(transaction_workers)
-        self.simple_select()
+        # self.simple_select()
 
     def simple_sum(self):
         self.table.init_priority_queues(self.num_threads)
@@ -148,8 +148,8 @@ class Simple_Tester:
     def run_all(self):
         self.setup()
         # self.simple_select()
-        # self.simple_update()
-        self.simple_sum()
+        self.simple_update()
+        # self.simple_sum()
         # self.simple_delete()
         os.system('rm -rf ECS165')
 

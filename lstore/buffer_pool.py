@@ -101,8 +101,8 @@ class BufferPool:
             # Create File if not existed => Avoid calling add_page more than once to overwrite the Page()
             dirname = os.path.dirname(page_path)
             if not os.path.isdir(dirname):
-                print("Make dir", dirname)
-                print(uid)
+                # print("Make dir", dirname)
+                # print(uid)
                 os.makedirs(dirname)
             f = open(page_path, "w+")
             f.close()
