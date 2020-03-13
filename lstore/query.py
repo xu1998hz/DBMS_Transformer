@@ -112,6 +112,18 @@ class Query:
                     ops['page_lacth'] = 0
                     #ops_list.append([index+NUM_METAS, ops])
                     ops_list.append([(page_pointer[0], page_pointer[1]), ops])
+
+                    ops = {}
+                    ops['command_type'] = "select"
+                    ops['command_num'] = self.table.select_count
+                    ops['column_id'] = index + NUM_METAS
+                    ops['r_w'] = "read"
+                    ops['base_tail'] = "tail"
+                    ops['meta_data'] = "data"
+                    ops['page_pointer'] = page_pointer
+                    ops['page_lacth'] = 0
+                    #ops_list.append([index+NUM_METAS, ops])
+                    ops_list.append([(page_pointer[0], page_pointer[1]), ops])
                     #print(ops_list)
         #read_indexes = []
         #for i in range(len(page_pointer)):
@@ -199,136 +211,137 @@ class Query:
         #update tailmetadata
 
         for query_col,val in enumerate(columns):
-            if val == None:
-                continue
-            else:
+            #if val == None:
+        #    else:
                 # self.table.page_directory["Base"][NUM_METAS+query_col][update_range_index].Hash_insert(int.from_bytes(base_rid,byteorder='big'))
                 # compute new tail record TID, it requires to latch the page, lacth the page means read this page
 
                 # self.table.mg_rec_update(NUM_METAS+query_col, *page_pointer[0])
-                tmp_indice = self.table.get_latest_tail(INDIRECTION_COLUMN, update_range_index)
+            tmp_indice = self.table.get_latest_tail(INDIRECTION_COLUMN, update_range_index)
 
-                #args = [self.table.name, "Tail", INDIRECTION_COLUMN, update_range_index, tmp_indice]
-                ops_temp = {}
-                ops_temp['command_type'] = "update"
-                ops_temp['command_num'] = self.table.update_count
+            #args = [self.table.name, "Tail", INDIRECTION_COLUMN, update_range_index, tmp_indice]
+            ops_temp = {}
+            ops_temp['command_type'] = "update"
+            ops_temp['command_num'] = self.table.update_count
 
-                ops_temp['column_id'] = INDIRECTION_COLUMN
-                ops_temp['r_w'] = "read"
-                ops_temp['base_tail'] = "tail"
-                ops_temp['meta_data'] = "meta"
-                ops_temp['page_pointer'] = page_pointer[0]
-                ops_temp['page_lacth'] = 1
-                ops_list.append([(page_pointer[0][0], page_pointer[0][1]), ops_temp])
-                #ops_list.append([INDIRECTION_COLUMN, ops_temp])
-                #page_records = BufferPool.get_page(*args).num_records
-                #total_records = page_records + tmp_indice*MAX_RECORDS
-                #next_tid = total_records
-                #next_tid = int.from_bytes(('t'+ str(total_records)).encode(), byteorder = "big")
-                # the record is firstly updated
+            ops_temp['column_id'] = INDIRECTION_COLUMN
+            ops_temp['r_w'] = "read"
+            ops_temp['base_tail'] = "tail"
+            ops_temp['meta_data'] = "meta"
+            ops_temp['page_pointer'] = page_pointer[0]
+            ops_temp['page_lacth'] = 1
+            ops_list.append([(page_pointer[0][0], page_pointer[0][1]), ops_temp])
+            #ops_list.append([INDIRECTION_COLUMN, ops_temp])
+            #page_records = BufferPool.get_page(*args).num_records
+            #total_records = page_records + tmp_indice*MAX_RECORDS
+            #next_tid = total_records
+            #next_tid = int.from_bytes(('t'+ str(total_records)).encode(), byteorder = "big")
+            # the record is firstly updated
 
-                # From first if branch, compute the read to get next tail indirection
-                ops_temp = {}
-                ops_temp['command_type'] = "update"
-                ops_temp['command_num'] = self.table.update_count
+            # From first if branch, compute the read to get next tail indirection
+            ops_temp = {}
+            ops_temp['command_type'] = "update"
+            ops_temp['command_num'] = self.table.update_count
 
-                ops_temp['column_id'] = RID_COLUMN
-                ops_temp['r_w'] = "read"
-                ops_temp['base_tail'] = "base"
-                ops_temp['meta_data'] = "meta"
-                ops_temp['page_pointer'] = page_pointer[0]
-                ops_temp['page_lacth'] = 0
-                ops_list.append([(page_pointer[0][0], page_pointer[0][1]), ops_temp])
-                #ops_list.append([RID_COLUMN, ops_temp])
+            ops_temp['column_id'] = RID_COLUMN
+            ops_temp['r_w'] = "read"
+            ops_temp['base_tail'] = "base"
+            ops_temp['meta_data'] = "meta"
+            ops_temp['page_pointer'] = page_pointer[0]
+            ops_temp['page_lacth'] = 0
+            ops_list.append([(page_pointer[0][0], page_pointer[0][1]), ops_temp])
+            #ops_list.append([RID_COLUMN, ops_temp])
 
-                # write a tail record with specific column
-                # needs write
-                ops_temp = {}
-                ops_temp['command_type'] = "update"
-                ops_temp['command_num'] = self.table.update_count
+            # write a tail record with specific column
+            # needs write
+            ops_temp = {}
+            ops_temp['command_type'] = "update"
+            ops_temp['command_num'] = self.table.update_count
 
-                ops_temp['column_id'] = query_col + NUM_METAS + 1
-                ops_temp['r_w'] = "write"
-                ops_temp['base_tail'] = "tail"
-                ops_temp['meta_data'] = "data"
-                ops_temp['page_pointer'] = page_pointer[0]
-                ops_temp['page_lacth'] = 0
-                ops_temp['write_data'] = val
-                ops_list.append([(page_pointer[0][0], page_pointer[0][1]), ops_temp])
-                #ops_list.append([query_col + NUM_METAS, ops_temp])
-                # if (int.from_bytes(base_indirection_id,byteorder='big') == MAXINT):
-                #     # compute new tail record indirection :  the indirection of tail record point backward to base pages
-                #     args = [self.table.name, "Base", RID_COLUMN, *page_pointer[0]]
-                #     next_tail_indirection = BufferPool.get_record(*args)  # in bytes
-                #     next_tail_indirection = int.from_bytes(next_tail_indirection, byteorder='big')
-                #     # compute tail columns : e.g. [NONE,NONE,updated_value,NONE]
-                #     next_tail_columns = []
-                #     next_tail_columns = [MAXINT for i in range(0,len(columns))]
-                #     next_tail_columns[query_col] = val
-                # # the record has been updated
-                # else:
-                #     # compute new tail record indirection : the indirection of new tail record point backward to last tail record for this key
-                #     next_tail_indirection = int.from_bytes(base_indirection_id,byteorder='big')
-                #     # compute tail columns : first copy the columns of the last tail record and update the new specified attribute
-                #     base_indirection = int.from_bytes(base_indirection_id, byteorder = 'big')
-                #     next_tail_columns = self.table.get_tail_columns(base_indirection, update_range_index)
-                #     next_tail_columns[query_col] = val
-                ops_temp = {}
-                ops_temp['command_type'] = "update"
-                ops_temp['command_num'] = self.table.update_count
+            ops_temp['column_id'] = query_col + NUM_METAS
+            ops_temp['r_w'] = "write"
+            ops_temp['base_tail'] = "tail"
+            ops_temp['meta_data'] = "data"
+            ops_temp['page_pointer'] = page_pointer[0]
+            ops_temp['page_lacth'] = 0
+            if val == None:
+                val = MAXINT
+            ops_temp['write_data'] = val
+            ops_list.append([(page_pointer[0][0], page_pointer[0][1]), ops_temp])
+            #ops_list.append([query_col + NUM_METAS, ops_temp])
+            # if (int.from_bytes(base_indirection_id,byteorder='big') == MAXINT):
+            #     # compute new tail record indirection :  the indirection of tail record point backward to base pages
+            #     args = [self.table.name, "Base", RID_COLUMN, *page_pointer[0]]
+            #     next_tail_indirection = BufferPool.get_record(*args)  # in bytes
+            #     next_tail_indirection = int.from_bytes(next_tail_indirection, byteorder='big')
+            #     # compute tail columns : e.g. [NONE,NONE,updated_value,NONE]
+            #     next_tail_columns = []
+            #     next_tail_columns = [MAXINT for i in range(0,len(columns))]
+            #     next_tail_columns[query_col] = val
+            # # the record has been updated
+            # else:
+            #     # compute new tail record indirection : the indirection of new tail record point backward to last tail record for this key
+            #     next_tail_indirection = int.from_bytes(base_indirection_id,byteorder='big')
+            #     # compute tail columns : first copy the columns of the last tail record and update the new specified attribute
+            #     base_indirection = int.from_bytes(base_indirection_id, byteorder = 'big')
+            #     next_tail_columns = self.table.get_tail_columns(base_indirection, update_range_index)
+            #     next_tail_columns[query_col] = val
+            ops_temp = {}
+            ops_temp['command_type'] = "update"
+            ops_temp['command_num'] = self.table.update_count
 
-                ops_temp['column_id'] = SCHEMA_ENCODING_COLUMN
-                ops_temp['r_w'] = "read"
-                ops_temp['base_tail'] = "base"
-                ops_temp['meta_data'] = "meta"
-                ops_temp['page_pointer'] = page_pointer[0]
-                ops_temp['page_lacth'] = 0
-                ops_list.append([(page_pointer[0][0], page_pointer[0][1]), ops_temp])
-            #    ops_list.append([SCHEMA_ENCODING_COLUMN, ops_temp])
+            ops_temp['column_id'] = SCHEMA_ENCODING_COLUMN
+            ops_temp['r_w'] = "read"
+            ops_temp['base_tail'] = "base"
+            ops_temp['meta_data'] = "meta"
+            ops_temp['page_pointer'] = page_pointer[0]
+            ops_temp['page_lacth'] = 0
+            ops_list.append([(page_pointer[0][0], page_pointer[0][1]), ops_temp])
+        #    ops_list.append([SCHEMA_ENCODING_COLUMN, ops_temp])
 
-                #args = [self.table.name, "Base", SCHEMA_ENCODING_COLUMN, *page_pointer[0]]
-                #encoding_base = BufferPool.get_record(*args)
-                #old_encoding = int.from_bytes(encoding_base,byteorder="big")
-                #new_encoding = old_encoding | (1<<query_col)
-                #schema_encoding = new_encoding
-                #starttime = datetime_to_int(datetime.datetime.now())
-                #lastupdatetime = 0
-                #updatetime = 0
-                # update new tail record
-                # meta_data = [next_tail_indirection,next_tid,schema_encoding,base_id,starttime,lastupdatetime,updatetime]
-                # meta_data.extend(next_tail_columns)
-                # tail_data = meta_data
-                # self.table.tail_page_write(tail_data, update_range_index)
+            #args = [self.table.name, "Base", SCHEMA_ENCODING_COLUMN, *page_pointer[0]]
+            #encoding_base = BufferPool.get_record(*args)
+            #old_encoding = int.from_bytes(encoding_base,byteorder="big")
+            #new_encoding = old_encoding | (1<<query_col)
+            #schema_encoding = new_encoding
+            #starttime = datetime_to_int(datetime.datetime.now())
+            #lastupdatetime = 0
+            #updatetime = 0
+            # update new tail record
+            # meta_data = [next_tail_indirection,next_tid,schema_encoding,base_id,starttime,lastupdatetime,updatetime]
+            # meta_data.extend(next_tail_columns)
+            # tail_data = meta_data
+            # self.table.tail_page_write(tail_data, update_range_index)
 
-                # page is already latched
-                ops_temp = {}
-                ops_temp['command_type'] = "update"
-                ops_temp['command_num'] = self.table.update_count
+            # page is already latched
+            ops_temp = {}
+            ops_temp['command_type'] = "update"
+            ops_temp['command_num'] = self.table.update_count
 
-                ops_temp['column_id'] = INDIRECTION_COLUMN
-                ops_temp['r_w'] = "write"
-                ops_temp['base_tail'] = "base"
-                ops_temp['meta_data'] = "meta"
-                ops_temp['page_pointer'] = page_pointer[0]
-                ops_temp['page_lacth'] = 0
-                ops_list.append([(page_pointer[0][0], page_pointer[0][1]), ops_temp])
-                #ops_list.append([INDIRECTION_COLUMN, ops_temp])
-                # overwrite base page with new metadata
-                # args = [self.table.name, "Base", INDIRECTION_COLUMN, page_pointer[0][0], page_pointer[0][1]]
-                # page = BufferPool.get_page(*args)
-                # page.update(update_record_index, next_tid)
-                ops_temp = {}
-                ops_temp['command_type'] = "update"
-                ops_temp['command_num'] = self.table.update_count
+            ops_temp['column_id'] = INDIRECTION_COLUMN
+            ops_temp['r_w'] = "write"
+            ops_temp['base_tail'] = "base"
+            ops_temp['meta_data'] = "meta"
+            ops_temp['page_pointer'] = page_pointer[0]
+            ops_temp['page_lacth'] = 0
+            ops_list.append([(page_pointer[0][0], page_pointer[0][1]), ops_temp])
+            #ops_list.append([INDIRECTION_COLUMN, ops_temp])
+            # overwrite base page with new metadata
+            # args = [self.table.name, "Base", INDIRECTION_COLUMN, page_pointer[0][0], page_pointer[0][1]]
+            # page = BufferPool.get_page(*args)
+            # page.update(update_record_index, next_tid)
+            ops_temp = {}
+            ops_temp['command_type'] = "update"
+            ops_temp['command_num'] = self.table.update_count
 
-                ops_temp['column_id'] = SCHEMA_ENCODING_COLUMN
-                ops_temp['r_w'] = "write"
-                ops_temp['base_tail'] = "base"
-                ops_temp['meta_data'] = "meta"
-                ops_temp['page_pointer'] = page_pointer[0]
-                ops_temp['page_lacth'] = 0
-                ops_temp['operation_column'] = query_col + NUM_METAS
-                ops_list.append([(page_pointer[0][0], page_pointer[0][1]), ops_temp])
+            ops_temp['column_id'] = SCHEMA_ENCODING_COLUMN
+            ops_temp['r_w'] = "write"
+            ops_temp['base_tail'] = "base"
+            ops_temp['meta_data'] = "meta"
+            ops_temp['page_pointer'] = page_pointer[0]
+            ops_temp['page_lacth'] = 0
+            ops_temp['operation_column'] = query_col + NUM_METAS
+            ops_list.append([(page_pointer[0][0], page_pointer[0][1]), ops_temp])
                 #ops_list.append([SCHEMA_ENCODING_COLUMN, ops_temp])
                 # args = [self.table.name, "Base", SCHEMA_ENCODING_COLUMN, page_pointer[0][0], page_pointer[0][1]]
                 # page = BufferPool.get_page(*args)
@@ -389,7 +402,7 @@ class Query:
 
             ops_temp['command_type'] = "sum"
             ops_temp['command_num'] = self.table.sum_count
-            ops_temp['column_id'] = aggregate_column_index+NUM_METAS+1
+            ops_temp['column_id'] = aggregate_column_index+NUM_METAS
             ops_temp['r_w'] = "read"
             ops_temp['base_tail'] = "base"
             ops_temp['meta_data'] = "data"

@@ -102,14 +102,20 @@ class TransactionWorker:
                         temp = self.read_base_data_column(op['page_pointer'], op['column_id'])
                         key_args = tuple([command_type, command_num, "base", op['column_id'], tuple(op['page_pointer'])])
                         self.puzzle[key_args] = temp
+                    #TODO: fix read from tail
                     else:
-                        base_indirection = self.puzzle[command_type, command_num, "base", INDIRECTION_COLUMN,  tuple(op['page_pointer'])]
-                        temp = self.read_tail_data_column(op['page_pointer'], op['column_id'], base_indirection)
-                        key_args = tuple([command_type, command_num, "tail", op['column_id'], tuple(op['page_pointer'])])
-                        self.puzzle[key_args] = temp
+                        args = tuple([command_type, command_num, "base", INDIRECTION_COLUMN,  tuple(op['page_pointer'])])
+                        if args not in self.puzzle.keys():
+                            continue
+                        else:
+                            base_indirection = self.puzzle[args]
+                            temp = self.read_tail_data_column(op['page_pointer'], op['column_id'], base_indirection)
+                            key_args = tuple([command_type, command_num, "tail", op['column_id'], tuple(op['page_pointer'])])
+                            self.puzzle[key_args] = temp
+                            print(key_args, temp)
                 else:
                     if op['base_tail'] == "base":
-                        if op['column_id'] == INDIRECTION_COLUMN:
+                        if op['column_id'] == RID_COLUMN:
                             args = tuple([command_type, command_num, "tail", op['column_id'], tuple(op['page_pointer'])])
                             self.write_base(op['page_pointer'], op['column_id'], self.puzzle[args])
                         else:
@@ -124,7 +130,7 @@ class TransactionWorker:
                         if op['write_data'] != None:
                             self.write_tail(op['page_pointer'], op['column_id'], op['write_data'])
                         else:
-                            args = tuple([command_type, command_num, "base", op['column_id'], op['page_pointer']])
+                            args = tuple([command_type, command_num, "base", op['column_id'], tuple(op['page_pointer'])])
                             self.write_tail(op['page_pointer'], op['column_id'], self.puzzle[args])
 
 
@@ -132,7 +138,7 @@ class TransactionWorker:
         result = {}
         for key, value in self.puzzle.items():
             keyl = list(key)
-            command = tuple([keyl[0], keyl[1], keyl[3]])
+            command = tuple([keyl[0], keyl[1], keyl[2], keyl[3]])
             if keyl[0] == "sum":
                 if (keyl[3] >= NUM_METAS):
                     if command not in result.keys():
@@ -142,7 +148,7 @@ class TransactionWorker:
                     result[command] = temp
             elif key[0] == "select":
                 result[command] = value
-        print(self.puzzle.values())
+        # print(self.puzzle)
         print(result)
 
 
