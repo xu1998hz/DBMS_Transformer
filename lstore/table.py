@@ -261,3 +261,16 @@ class Table:
 
             page.dirty = 1
             page.write(value)
+
+    def tail_column_write(self, data, column_num, range_index):
+        page_id = self.get_latest_tail(column_num, range_index)
+        args = [self.name, "Tail", column_num, range_index, page_id]
+        page = BufferPool.get_page(*args)
+
+        if not page.has_capacity():
+            args[-1] += 1
+            BufferPool.set_latest_tail(self.name, column_num, range_index, args[-1])
+            page = BufferPool.get_page(*args)
+
+        page.dirty = 1
+        page.write(data)

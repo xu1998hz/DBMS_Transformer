@@ -16,7 +16,7 @@ class Simple_Tester:
         self.keys = []
         self.records = {}
         self.num_threads = 2
-    
+
     def setup(self):
         for i in range(8):
             key = 100 + i
@@ -145,9 +145,9 @@ class Simple_Tester:
         if (os.path.isdir('ECS165')):
             os.system("rm -rf ECS165")
         self.setup()
-        # self.simple_select()
+        self.simple_select()
         # self.simple_update()
-        self.simple_sum()
+        #self.simple_sum()
         # self.simple_delete()
         os.system('rm -rf ECS165')
 
@@ -160,7 +160,7 @@ class One_Thread_Tester:
         self.keys = []
         self.records = {}
         self.num_records = 8
-    
+
     def setup(self):
         for i in range(self.num_records):
             key = 100 + i
@@ -183,7 +183,7 @@ class One_Thread_Tester:
             transaction.add_query(q.select, self.keys[i], 0, [1, 1, 1, 1, 1])
         transaction_worker.add_transaction(transaction)
         transaction_worker.run()
-    
+
     def one_update(self):
         q, transaction, transaction_worker = self.init_trans_worker()
         updated_columns = [None, 0, None, None, None]
@@ -214,7 +214,7 @@ class One_Thread_Tester:
         if (os.path.isdir('ECS165')):
             os.system("rm -rf ECS165")
         self.setup()
-        # self.one_select()
+        self.one_select()
         # self.one_update()
         # self.one_sum()
         # self.one_delete()
