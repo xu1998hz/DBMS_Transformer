@@ -142,8 +142,7 @@ class TransactionWorker:
                     result[command] = temp
             elif key[0] == "select":
                 result[command] = value
-        # print(self.puzzle.values())
-        # print(result
+        print(self.puzzle)
 
 
     # read data column from page pointer for specific query column, return specific value of record
