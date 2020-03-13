@@ -122,6 +122,7 @@ class Table:
             self.merged_record = {}
 
     def init_priority_queues(self, num_threads):
+        self.priority_queues = []
         for i in range(num_threads):
             q = {}
             self.priority_queues.append(q)
