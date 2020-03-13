@@ -10,6 +10,8 @@ import os
 class Simple_Tester:
 # Setup: 2 transaction workers, 2 transactions / worker, 2 queries / transaction
     def __init__(self):
+        if (os.path.isdir('ECS165')):
+            os.system("rm -rf ECS165")
         self.db = Database()
         self.db.open('ECS165')
         self.table = self.db.create_table('Grades', 5, 0)
@@ -142,8 +144,6 @@ class Simple_Tester:
         self.simple_select()
 
     def run_all(self):
-        if (os.path.isdir('ECS165')):
-            os.system("rm -rf ECS165")
         self.setup()
         self.simple_select()
         # self.simple_update()
@@ -154,6 +154,8 @@ class Simple_Tester:
 class One_Thread_Tester:
 # 1 transaction worker, 1 transaction, 8 quries
     def __init__(self):
+        if (os.path.isdir('ECS165')):
+            os.system("rm -rf ECS165")
         self.db = Database()
         self.db.open('ECS165')
         self.table = self.db.create_table('Grades', 5, 0)
@@ -211,22 +213,20 @@ class One_Thread_Tester:
         self.one_select() # should print all DELETED value = 2**64-2
 
     def run_all(self):
-        if (os.path.isdir('ECS165')):
-            os.system("rm -rf ECS165")
         self.setup()
-        self.one_select()
-        # self.one_update()
+        # self.one_select()
+        self.one_update()
         # self.one_sum()
         # self.one_delete()
         os.system('rm -rf ECS165')
 
 def main():
-    # print("\n*** One Thread Tester ***\n")
-    # one_thread_tester = One_Thread_Tester()
-    # one_thread_tester.run_all()
-    print("\n*** Simple Quecc Tester ***\n")
-    simple_tester = Simple_Tester()
-    simple_tester.run_all()
+    print("\n*** One Thread Tester ***\n")
+    one_thread_tester = One_Thread_Tester()
+    one_thread_tester.run_all()
+    # print("\n*** Simple Quecc Tester ***\n")
+    # simple_tester = Simple_Tester()
+    # simple_tester.run_all()
 
 if __name__ == "__main__":
     os.system("clear")
