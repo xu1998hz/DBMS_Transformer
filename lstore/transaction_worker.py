@@ -105,7 +105,6 @@ class TransactionWorker:
                         self.puzzle[key_args] = temp
                     #TODO: fix read from tail
                     else:
-=======
                         args = tuple([command_type, command_num, "base", INDIRECTION_COLUMN,  tuple(op['page_pointer'])])
                         base_indirection = self.puzzle[args]
 

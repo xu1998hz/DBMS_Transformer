@@ -112,18 +112,18 @@ class Query:
                     ops['page_lacth'] = 0
                     #ops_list.append([index+NUM_METAS, ops])
                     ops_list.append([(page_pointer[0], page_pointer[1]), ops])
-
-                    ops = {}
-                    ops['command_type'] = "select"
-                    ops['command_num'] = self.table.select_count
-                    ops['column_id'] = index + NUM_METAS
-                    ops['r_w'] = "read"
-                    ops['base_tail'] = "tail"
-                    ops['meta_data'] = "data"
-                    ops['page_pointer'] = page_pointer
-                    ops['page_lacth'] = 0
-                    #ops_list.append([index+NUM_METAS, ops])
-                    ops_list.append([(page_pointer[0], page_pointer[1]), ops])
+                    #
+                    # ops = {}
+                    # ops['command_type'] = "select"
+                    # ops['command_num'] = self.table.select_count
+                    # ops['column_id'] = index + NUM_METAS
+                    # ops['r_w'] = "read"
+                    # ops['base_tail'] = "tail"
+                    # ops['meta_data'] = "data"
+                    # ops['page_pointer'] = page_pointer
+                    # ops['page_lacth'] = 0
+                    # #ops_list.append([index+NUM_METAS, ops])
+                    # ops_list.append([(page_pointer[0], page_pointer[1]), ops])
                     #print(ops_list)
         #read_indexes = []
         #for i in range(len(page_pointer)):
@@ -230,6 +230,7 @@ class Query:
             ops_temp['meta_data'] = "meta"
             ops_temp['page_pointer'] = page_pointer[0]
             ops_temp['page_lacth'] = 1
+            ops_temp['operation_column'] = query_col + NUM_METAS
             ops_list.append([(page_pointer[0][0], page_pointer[0][1]), ops_temp])
             #ops_list.append([INDIRECTION_COLUMN, ops_temp])
             #page_records = BufferPool.get_page(*args).num_records
@@ -249,6 +250,7 @@ class Query:
             ops_temp['meta_data'] = "meta"
             ops_temp['page_pointer'] = page_pointer[0]
             ops_temp['page_lacth'] = 0
+            ops_temp['operation_column'] = query_col + NUM_METAS
             ops_list.append([(page_pointer[0][0], page_pointer[0][1]), ops_temp])
             #ops_list.append([RID_COLUMN, ops_temp])
 
@@ -267,6 +269,7 @@ class Query:
             if val == None:
                 val = MAXINT
             ops_temp['write_data'] = val
+            ops_temp['operation_column'] = query_col + NUM_METAS
             ops_list.append([(page_pointer[0][0], page_pointer[0][1]), ops_temp])
             #ops_list.append([query_col + NUM_METAS, ops_temp])
             # if (int.from_bytes(base_indirection_id,byteorder='big') == MAXINT):
@@ -296,6 +299,7 @@ class Query:
             ops_temp['meta_data'] = "meta"
             ops_temp['page_pointer'] = page_pointer[0]
             ops_temp['page_lacth'] = 0
+            ops_temp['operation_column'] = query_col + NUM_METAS
             ops_list.append([(page_pointer[0][0], page_pointer[0][1]), ops_temp])
         #    ops_list.append([SCHEMA_ENCODING_COLUMN, ops_temp])
 
@@ -324,6 +328,7 @@ class Query:
             ops_temp['meta_data'] = "meta"
             ops_temp['page_pointer'] = page_pointer[0]
             ops_temp['page_lacth'] = 0
+            ops_temp['operation_column'] = query_col + NUM_METAS
             ops_list.append([(page_pointer[0][0], page_pointer[0][1]), ops_temp])
             #ops_list.append([INDIRECTION_COLUMN, ops_temp])
             # overwrite base page with new metadata
@@ -346,7 +351,7 @@ class Query:
                 # args = [self.table.name, "Base", SCHEMA_ENCODING_COLUMN, page_pointer[0][0], page_pointer[0][1]]
                 # page = BufferPool.get_page(*args)
                 # page.update(update_record_index, schema_encoding)
-                self.table.update_count += 1
+        # self.table.update_count += 1
 
         self.table.num_updates += 1
         self.table.mergeThreadController()
