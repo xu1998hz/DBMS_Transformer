@@ -39,16 +39,16 @@ for i in range(num_threads):
 # generates 10k random queries
 # each transaction will increment the first column of a record 5 times
 contention = 2000 # change contention here
-for i in range(2000):
+for i in range(1000):
     k = randint(0, contention - 1)
     transaction = Transaction(i % num_threads)
     for j in range(5):
         key = keys[k * 5 + j]
         q = Query(grades_table)
         transaction.add_query(q.select, key, 0, [1, 1, 1, 1, 1])
-        # q = Query(grades_table)
-        # updated_columns = [None, 0, None, None, None]
-        # transaction.add_query(q.update, key, *updated_columns)
+        q = Query(grades_table)
+        updated_columns = [None, 0, None, None, None]
+        transaction.add_query(q.update, key, *updated_columns)
     transaction_workers[i % num_threads].add_transaction(transaction)
 
 threads = []
@@ -68,7 +68,6 @@ time_elapse = time1 - time0
 
 print("time: \t\t\t", time_elapse)
 print('Contention:', (2000 - contention) / 2000)
-print('Abort Rate:', 0)
 print('Throughput:', 10000 / time_elapse)
 
 os.system("rm -rf ECS165")
