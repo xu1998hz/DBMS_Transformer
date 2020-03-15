@@ -59,7 +59,10 @@ class ReadWriteLock:
         if self._readers != 0 :
             self._rw_ready.release()
             return False
-        else:
+        elif self._writers: 
+            self._rw_ready.release()
+            return False
+        else:   
             self._writers = True
             self._rw_ready.release()
             return True

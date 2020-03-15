@@ -126,34 +126,6 @@ class Table:
             t.start()
             t.join()
 
-    def mergeProcessController(self):
-
-        print("thread is running")
-        r,w = os.pipe()
-        n = os.fork()
-        if n > 0:
-            os.close(w)
-            r = os.fdopen(r,'r')
-            while self.merge_pid is None:
-                res = r.read()
-                if res == "":
-                    continue
-                self.merge_pid = int(res)
-                print("merge_pid", self.merge_pid)
-            r.close()
-            print("Parent process and id is ", os.getpid())
-        else:
-            os.close(r)
-            w = os.fdopen(w,'w')
-            data = "{}".format(os.getpid())
-            print("data: ", data)
-            w.write(data)
-            w.close()
-            self.__merge()
-            print("Child process and id is: ", os.getpid())
-    #    f.start()
-        print("thread is finished")
-
     def get_latest_tail(self, column_id, page_range_id):
         return BufferPool.get_latest_tail(self.name, column_id, page_range_id)
 
