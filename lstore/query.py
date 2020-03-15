@@ -192,8 +192,6 @@ class Query:
                 meta_data.extend(next_tail_columns)
                 tail_data = meta_data
                 self.table.tail_page_write(tail_data, update_range_index)
-                # Release lock from tail page range 
-                self.table.release_tail_lock(self.table.name,INDIRECTION_COLUMN,update_range_index)
 
                 # overwrite base page with new metadata
                 args = [self.table.name, "Base", INDIRECTION_COLUMN, page_pointer[0][0], page_pointer[0][1]]
@@ -207,9 +205,10 @@ class Query:
                 # Release page latching 
                 args = [self.table.name,INDIRECTION_COLUMN,  update_range_index, update_record_page_index]
                 self.table.release_page_lock(*args)
-
-
-        self.table.mergeThreadController()
+        # Check Merging in this update page range 
+        self.table.mergeThreadController(update_range_index)
+        # Release lock from  page range 
+        self.table.release_tail_lock(self.table.name,INDIRECTION_COLUMN,update_range_index)
 
     """
     :param start_range: int         # Start of the key range to aggregate 

@@ -50,21 +50,23 @@ class Table:
         # background merge thread is running as table started
 
 
-    def __merge(self):
-        keys, p_indices = BufferPool.get_table_tails(self.name)
-        for (col_index, rg_index), last_p_index in zip(keys, p_indices):
+    def __merge(self,update_range_index):
+        rg_index = update_range_index
+        for col_index in range(self.num_columns):
+            last_p_index = BufferPool.get_latest_tail(self.name,col_index,rg_index)
+            # ignore meta datas column
             if col_index < NUM_METAS:
                 continue
-
+            # Get last tail page in this range 
             args = [self.name, 'Tail', col_index, rg_index, last_p_index]
             last_page = BufferPool.get_page(*args)
-
+            # Update new tps 
             old_tps = BufferPool.get_tps(self.name, col_index, rg_index)
             new_tps = last_p_index*MAX_RECORDS + last_page.num_records
-
+            # Get the base pages in this range 
             page_range = BufferPool.get_base_page_range(self.name, col_index, rg_index)
             page_range_copy = copy.deepcopy(page_range)
-
+            # Initialize merged_record 
             merged_record = {}
             for uid in page_range_copy.keys():
                 t_name, base_tail, col_id, range_id, page_id = uid
@@ -74,6 +76,7 @@ class Table:
 
             max_merged_count = len(list(self.merged_record.keys()))
             early_stopping = 0
+            # Roll back from new_tps to old_tps
             start_tail_p_index = (new_tps-1)//MAX_RECORDS
             end_tail_p_index = old_tps//MAX_RECORDS
             # print("Merging Column {} Page Range {}".format(col_index, rg_index))
@@ -109,21 +112,20 @@ class Table:
 
                 if early_stopping == max_merged_count:
                     break
-
             # Base Page Range updates
             BufferPool.update_base_page_range(page_range_copy)
             # TPS updates
             BufferPool.set_tps(self.name, col_index, rg_index, new_tps)
             self.merged_record = {}
 
-    def mg_rec_update(self, col_index, rg_index, pg_index, rc_index):
-        self.merged_record[(self.name, "Base", col_index, rg_index, pg_index, rc_index)] = 0
-
-    def mergeThreadController(self):
+    def mergeThreadController(self,update_range_index):
         if self.num_updates % MERGE_TRIGGER == 0:
-            t = threading.Thread(target=self.__merge())
+            t = threading.Thread(target=self.__merge(update_range_index))
             t.start()
             t.join()
+    
+    def mg_rec_update(self, col_index, rg_index, pg_index, rc_index):
+        self.merged_record[(self.name, "Base", col_index, rg_index, pg_index, rc_index)] = 0
 
     def get_latest_tail(self, column_id, page_range_id):
         return BufferPool.get_latest_tail(self.name, column_id, page_range_id)
