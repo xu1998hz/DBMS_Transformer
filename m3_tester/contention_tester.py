@@ -66,7 +66,7 @@ time_elapse = time1 - time0
 # print("10K Queries took:  \t\t\t", time_elapse)
 
 num_committed_transactions = sum(t.result for t in transaction_workers)
-print('Contention:', contention)
+print('Contention:', (2000 - contention) / 2000)
 print('Abort Rate:', (1000 - num_committed_transactions) / 10)
 print('Throughput:', num_committed_transactions / time_elapse)
 
