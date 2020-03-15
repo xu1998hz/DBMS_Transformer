@@ -4,6 +4,7 @@ from lstore.index import Index
 from time import time
 import time as t
 from lstore.buffer_pool import BufferPool
+from collections import defaultdict
 from lstore.lock_manager import rwlock_manager
 # queue is used for managing threads, thread is defined per column per page range
 from queue import Queue
@@ -21,15 +22,6 @@ class Record:
         self.columns = columns
         self.indirection = None
 
-# this is for milestone 3, while each page range in each column will be a thread
-# class range_Thread(threading.Thread):
-#     def _init_(self, pg_range):
-#         threading.Thread._init_(self)
-#         self.pg_range = pg_range
-#     def run(self):
-#         pass
-
-
 class Table:
 
     """
@@ -37,17 +29,24 @@ class Table:
     :param num_columns: int     #Number of Columns: all columns are integer
     :param key: int             #Index of table key in columns
     """
-    def __init__(self, name, num_columns, key):
+    def __init__(self, name, num_columns, key,num_updates,num_records,merge_pid, merged_record):
+        # Table Meta datas 
         self.name = name
         self.key = key
         self.num_columns = num_columns
-        # TODO: invalid input -> columns > MAX_COLUMNS
+        self.num_updates = num_updates
+        self.num_records = num_records
+        self.merge_pid = merge_pid
+        self.merged_record = merged_record
+        
+        # Indexing 
         self.index = Index(self)
+        self.index.create_index(self.key)
+
+        # Lock manager and page latching 
         self.rwlock_manager = rwlock_manager()
-        self.num_updates = 0
-        self.num_records = 0
-        self.merge_pid = None
-        self.merged_record = {}
+        self.tid_locks = defaultdict(lambda: defaultdict(threading.Lock))# Key: (table_name, col_index, page_range_index), value: threading lock  
+        self.page_locks = defaultdict(lambda: defaultdict(threading.Lock))# Key: (table_name, col_index, page_range_index,page_index), value: threading lock  
         # background merge thread is running as table started
 
 
@@ -148,28 +147,6 @@ class Table:
             columns.append(self.get_tail(tid, column_id, range_index))
         return columns
 
-
-    """ invalidating the record : set bid and tids of this record to 0
-    def invalidate_record(self, page_range, page_index, record_index):
-        # invalidate the bid
-        #for i in range()
-        rid_page_range = self.page_directory["Base"][RID_COLUMN]
-        rid_page_range[page_range].get_value(page_index).data[record_index*8:(record_index+1)*8] = (0).to_bytes(8, byteorder='big')
-        # invalidate the tid
-        tid_page_range = self.page_directory["Tail"][RID_COLUMN]
-        byte_indirect = self.page_directory["Base"][INDIRECTION_COLUMN][page_range].get_value(page_index).get(record_index)
-        while ('b' not in byte_indirect.decode()) & (byte_indirect != MAXINT.to_bytes(8,byteorder = "big")):
-            tid_str = str(byte_indirect.decode()).split('t')[1]
-            tid = int(tid_str)
-            pre_updates = 0
-            for i in range(page_range):
-                for page in self.page_directory["Tail"][column+NUM_METAS][i]:
-                    pre_updates += page.num_records
-            in_range_tid = tid - pre_updates
-            page_index,record_index = in_range_tid//MAX_RECORDS,in_range_tid%MAX_RECORDS
-            tid_page_range[page_range][page_index].data[record_index*8:(record_index+1)*8] = (0).to_bytes(8, byteorder='big')
-            byte_indirect = self.page_directory["Tail"][INDIRECTION_COLUMN][page_range][page_index].get(record_index)
-    """
     def base_page_write(self, data):
         for i, value in enumerate(data):
             range_index = (self.num_records//MAX_RECORDS)//PAGE_RANGE
@@ -224,3 +201,18 @@ class Table:
 
             page.dirty = 1
             page.write(value)
+
+    # Bufferpool lock manager 
+    def acquire_tail_lock(self, t_name, column_id, page_range_id):
+        "Return Latest/Last Tail Base Index of given table, column and page range"
+        self.tid_locks[t_name][(column_id, page_range_id)].acquire()
+
+    def release_tail_lock(self, t_name, column_id, page_range_id):
+        self.tid_locks[t_name][(column_id, page_range_id)].release()
+
+    def acquire_page_lock(self, t_name, column_id, page_range_id,page_id):
+        "Return Latest/Last Tail Base Index of given table, column and page range"
+        self.page_locks[t_name][(column_id, page_range_id,page_id)].acquire()
+
+    def release_page_lock(self, t_name, column_id, page_range_id,page_id):
+        self.page_locks[t_name][(column_id, page_range_id,page_id)].release()
