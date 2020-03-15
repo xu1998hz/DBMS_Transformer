@@ -82,11 +82,10 @@ class Query:
         records = []
         for i in range(len(page_pointer)):
             # Acquire page lock 
-            args = [self.table.name, "Base", SCHEMA_ENCODING_COLUMN, page_pointer[i][0], page_pointer[i][1]]
-            BufferPool.get_page(*args).acquire_lock()
-            args = [self.table.name, "Base", INDIRECTION_COLUMN, page_pointer[i][0], page_pointer[i][1]]
-            BufferPool.get_page(*args).acquire_lock()
-
+            args = [self.table.name, SCHEMA_ENCODING_COLUMN, page_pointer[i][0], page_pointer[i][1]]
+            self.table.acquire_page_lock(*args)
+            args = [self.table.name, INDIRECTION_COLUMN, page_pointer[i][0], page_pointer[i][1]]
+            self.table.acquire_page_lock(*args)
             # collect base meta datas of each record
             args = [self.table.name, "Base", SCHEMA_ENCODING_COLUMN, *page_pointer[i]]
             base_schema = int.from_bytes(BufferPool.get_record(*args), byteorder='big')
@@ -117,10 +116,10 @@ class Query:
             records.append(record)
 
             # Release page latching 
-            args = [self.table.name, "Base", SCHEMA_ENCODING_COLUMN, page_pointer[i][0], page_pointer[i][1]]
-            BufferPool.get_page(*args).release_lock()
-            args = [self.table.name, "Base", INDIRECTION_COLUMN, page_pointer[i][0], page_pointer[i][1]]
-            BufferPool.get_page(*args).release_lock()
+            args = [self.table.name,SCHEMA_ENCODING_COLUMN, page_pointer[i][0], page_pointer[i][1]]
+            self.table.release_page_lock(*args)
+            args = [self.table.name,INDIRECTION_COLUMN, page_pointer[i][0], page_pointer[i][1]]
+            self.table.release_page_lock(*args)
 
         return records
 
@@ -138,8 +137,8 @@ class Query:
              self.table.index.update_index(columns[self.table.key],page_pointer[0],self.table.key)
        
         # Acquire page lock from any meta data 
-        args = [self.table.name, "Base", INDIRECTION_COLUMN, update_range_index, update_record_page_index]
-        BufferPool.get_page(*args).acquire_lock()   
+        args = [self.table.name, INDIRECTION_COLUMN, update_range_index, update_record_page_index]
+        self.table.acquire_page_lock(*args)
 
         # Meta data   
         args = [self.table.name, "Base", INDIRECTION_COLUMN, *page_pointer[0]]
@@ -154,10 +153,9 @@ class Query:
                 # compute new tail record TID
                 self.table.mg_rec_update(NUM_METAS+query_col, *page_pointer[0])
                 # TID computation protection 
-                BufferPool.acquire_tail_lock(self.table.name,INDIRECTION_COLUMN,update_range_index)
+                self.table.acquire_tail_lock(self.table.name,INDIRECTION_COLUMN,update_range_index)
                 tmp_indice = self.table.get_latest_tail(INDIRECTION_COLUMN, update_range_index)
                 args = [self.table.name, "Tail", INDIRECTION_COLUMN, update_range_index, tmp_indice]
-                BufferPool.get_page(*args).acquire_lock()   
                 page_records = BufferPool.get_page(*args).num_records
                 total_records = page_records + tmp_indice*MAX_RECORDS
                 next_tid = total_records
@@ -195,9 +193,7 @@ class Query:
                 tail_data = meta_data
                 self.table.tail_page_write(tail_data, update_range_index)
                 # Release lock from tail page range 
-                args = [self.table.name, "Tail", INDIRECTION_COLUMN, update_range_index, tmp_indice]
-                BufferPool.get_page(*args).release_lock()  
-                BufferPool.release_tail_lock(self.table.name,INDIRECTION_COLUMN,update_range_index)
+                self.table.release_tail_lock(self.table.name,INDIRECTION_COLUMN,update_range_index)
 
                 # overwrite base page with new metadata
                 args = [self.table.name, "Base", INDIRECTION_COLUMN, page_pointer[0][0], page_pointer[0][1]]
@@ -209,11 +205,11 @@ class Query:
                 page.update(update_record_index, schema_encoding)
                 self.table.num_updates += 1
                 # Release page latching 
-                args = [self.table.name, "Base", INDIRECTION_COLUMN,  update_range_index, update_record_page_index]
-                BufferPool.get_page(*args).release_lock()   
+                args = [self.table.name,INDIRECTION_COLUMN,  update_range_index, update_record_page_index]
+                self.table.release_page_lock(*args)
 
 
-        # self.table.mergeThreadController()
+        self.table.mergeThreadController()
 
     """
     :param start_range: int         # Start of the key range to aggregate 

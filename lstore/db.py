@@ -1,5 +1,7 @@
 from lstore.table import Table
 from lstore.buffer_pool import BufferPool
+from lstore.index import Index
+
 from lstore.config import *
 import os
 import time
@@ -11,17 +13,25 @@ sys.setrecursionlimit(RECURSION_LIMIT)
 
 # TODO: Write & Reaed latest_tail of each table to disk
 
-def read_table(path):
+def read_table_metas(path):
     f = open(path, "rb")
-    table = pickle.load(f)
+    metas = pickle.load(f)
     f.close()
 
-    return table
+    return metas
 
 
-def write_table(path, table):
+def write_table_metas(path, table):
     f = open(path, 'wb')
-    pickle.dump(table, f)
+    metas = []
+    metas.append(table.name)
+    metas.append(table.num_columns)
+    metas.append(table.key)
+    metas.append(table.num_updates)
+    metas.append(table.num_records)
+    metas.append(table.merge_pid)
+    metas.append(table.merged_record)
+    pickle.dump(metas, f)
     f.close()
 
 
@@ -34,17 +44,15 @@ class Database():
         # print("BufferPool Path @ {}".format(path))
         if not os.path.exists(path):
             os.makedirs(path)
-
         BufferPool.initial_path(path)
 
-        name2idx= {}
         # Restore Existed Table on Disk
         tables = [name for name in os.listdir(path) if os.path.isdir(os.path.join(path, name))]
         for t_name in tables:
-            t_path = os.path.join(path, t_name, 'table.pkl')
-            old_table = read_table(t_path)
-            name2idx[t_name] = len(self.tables)
-            self.tables.append(old_table)
+            t_path = os.path.join(path, t_name, 'table_metas.pkl')
+            # metas :  name, num_columns, key,num_updates=0,num_records=0,merge_pid = None, merged_recrod = {}
+            old_table_metas = read_table_metas(t_path)
+            self.create_table(*old_table_metas)
 
         # Restore Page Directory to BufferPool
         fname = os.path.join(path, "page_directory.txt")
@@ -97,10 +105,9 @@ class Database():
             t_name = table.name
             # os.kill(table.merge_pid, signal.SIGSTOP)
             table.merge_pid = None
-            t_path = os.path.join(BufferPool.path, t_name, "table.pkl")
-            write_table(t_path, table)
+            t_path = os.path.join(BufferPool.path, t_name, "table_metas.pkl")
+            write_table_metas(t_path, table)
         # print("Updating table.txt: {}".format(time.time() - s_time))
-
 
         s_time = time.time()
         # Write Page Directory Config file
@@ -135,14 +142,12 @@ class Database():
     :param num_columns: int     #Number of Columns: all columns are integer
     :param key: int             #Index of table key in columns
     """
-    def create_table(self, name, num_columns, key):
-        table = Table(name, num_columns, key)
+    def create_table(self, name, num_columns, key,num_updates=0,num_records=0,merge_pid = None, merged_record = {}):
+        table = Table(name, num_columns, key,num_updates,num_records,merge_pid, merged_record)
         BufferPool.init_latest_tail(name)
         BufferPool.init_tps(name)
-
         # create a new table in database
         self.tables.append(table)
-        # table.mergeProcessController()
         return table
 
     """
@@ -160,5 +165,4 @@ class Database():
     def get_table(self, name):
         for table in self.tables:
             if (table.name == name):
-                # table.mergeProcessController()
                 return table

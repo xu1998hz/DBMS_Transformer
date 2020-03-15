@@ -1,6 +1,5 @@
 from lstore.config import *
 from lstore.page import *
-from collections import defaultdict
 import threading 
 import os
 import heapq
@@ -32,16 +31,12 @@ def write_page(page, page_path):
 class BufferPool:
     size = BUFFER_POOL_SIZE
     path = None
-
     # active pages loaded in bufferpool
     page_directories = {}
-
     # Pop the least freuqently used page
     tstamp_directories = {}
-
     tps = {}  # Key: (table_name, col_index, page_range_index), value: tps
     latest_tail = {}  # Key: (table_name, col_index, page_range_index), value: lastest tail page id of specified page range
-    tid_locks = defaultdict(lambda: defaultdict(threading.Lock))# Key: (table_name, col_index, page_range_index), value: threading lock  
     def __init__(self):
         # print("Init BufferPool. Do Nothing ...")
         pass
@@ -107,20 +102,6 @@ class BufferPool:
                 if cls.is_full():
                     cls.remove_lru_page()
                 cls.page_directories[uid] = read_page(page_path)
-
-        # Old Code: Has Bug
-        # # Page not loaded in buffer, load from disk
-        # if cls.is_page_in_buffer(uid):
-        #     # No Space in bufferbool, write LRU page to disk
-        #     if cls.is_full():
-        #         cls.remove_lru_page()
-
-        #     if os.path.isfile(page_path):
-        #         cls.page_directories[uid] = read_page(page_path)
-        #     else:
-        #         cls.add_page(uid)
-        # import pdb; pdb.set_trace()
-
         cls.tstamp_directories[uid] = datetime.timestamp(datetime.now())
         return cls.page_directories[uid]
 
@@ -169,7 +150,6 @@ class BufferPool:
         for uid, new_page in page_range.items():
             # TODO: Might need to handle old_page
             old_page = cls.page_directories[uid]
-
             # li = [('Grades', 'Base', 7, 0, 0), ('Grades', 'Base', 8, 0, 0), ('Grades', 'Base', 9, 0, 0), ('Grades', 'Base', 10, 0, 0), ('Grades', 'Base', 11, 0, 0)]
             # if uid in li:
             #     print(int.from_bytes(old_page.get(256), byteorder='big'), int.from_bytes(new_page.get(256), byteorder='big'))
@@ -205,16 +185,6 @@ class BufferPool:
     @classmethod
     def set_latest_tail(cls, t_name, column_id, page_range_id, value=0):
         cls.latest_tail[t_name][(column_id, page_range_id)] = value
-
-    @classmethod
-    def acquire_tail_lock(cls, t_name, column_id, page_range_id):
-        "Return Latest/Last Tail Base Index of given table, column and page range"
-        cls.tid_locks[t_name][(column_id, page_range_id)].acquire()
-
-    @classmethod
-    def release_tail_lock(cls, t_name, column_id, page_range_id):
-        cls.tid_locks[t_name][(column_id, page_range_id)].release()
-
 
     @classmethod
     def copy_latest_tail(cls, old_latest_tail):
