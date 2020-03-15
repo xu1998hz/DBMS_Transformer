@@ -118,7 +118,7 @@ class Simple_Tester:
         transaction_workers[0].add_transaction(transaction)
 
         transaction = Transaction(1)
-        transaction.add_query(q.sum, self.keys[4], self.keys[7], 0) # 22
+        transaction.add_query(q.sum, self.keys[4], self.keys[7], 0) # 422
         transaction.add_query(q.sum, self.keys[4], self.keys[7], 2) # 8
         transaction_workers[1].add_transaction(transaction)
 
@@ -147,8 +147,8 @@ class Simple_Tester:
 
     def run_all(self):
         self.setup()
-        # self.simple_select()
-        self.simple_update()
+        self.simple_select()
+        # self.simple_update()
         # self.simple_sum()
         # self.simple_delete()
         os.system('rm -rf ECS165')
@@ -216,19 +216,19 @@ class One_Thread_Tester:
 
     def run_all(self):
         self.setup()
-        # self.one_select()
+        self.one_select()
         # self.one_update()
-        self.one_sum()
+        # self.one_sum()
         # self.one_delete()
         os.system('rm -rf ECS165')
 
 def main():
-    # print("\n*** One Thread Tester ***\n")
-    # one_thread_tester = One_Thread_Tester()
-    # one_thread_tester.run_all()
-    print("\n*** Simple Quecc Tester ***\n")
-    simple_tester = Simple_Tester()
-    simple_tester.run_all()
+    print("\n*** One Thread Tester ***\n")
+    one_thread_tester = One_Thread_Tester()
+    one_thread_tester.run_all()
+    # print("\n*** Simple Quecc Tester ***\n")
+    # simple_tester = Simple_Tester()
+    # simple_tester.run_all()
 
 if __name__ == "__main__":
     os.system("clear")
